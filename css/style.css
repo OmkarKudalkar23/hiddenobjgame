@@ -23,3 +23,117 @@ a {
 button {
     position: absolute;
 }
+
+/* Horror UI */
+#uiRoot {
+  pointer-events: none;
+}
+
+#clueBar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #e5e5e5;
+  background: rgba(0,0,0,0.55);
+  padding: 10px 18px;
+  border: 1px solid rgba(255,0,0,0.25);
+  border-radius: 6px;
+  font-family: "Georgia", serif;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 6px rgba(255,0,0,0.45);
+}
+
+#scorePanel {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  color: #a8ffb5;
+  font-family: "Trebuchet MS", sans-serif;
+  font-size: 16px;
+  background: rgba(0,0,0,0.45);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,255,120,0.25);
+  box-shadow: 0 0 10px rgba(0,255,120,0.15) inset;
+  pointer-events: none;
+}
+
+#scoreFlash {
+  margin-left: 10px;
+  font-weight: bold;
+}
+
+.flash-red {
+  color: #ff4d4d;
+  animation: flashOut 700ms ease-out forwards;
+}
+
+.flash-green {
+  color: #8bff8b;
+  animation: flashOut 700ms ease-out forwards;
+}
+
+@keyframes flashOut {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+
+.fade-in {
+  animation: fadeIn 400ms ease-out;
+}
+.fade-out {
+  animation: fadeOut 400ms ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+#endOverlay.hidden { display: none; }
+#endOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#endOverlay .endContent {
+  pointer-events: auto;
+  text-align: center;
+  color: #eaeaea;
+  font-family: "Georgia", serif;
+  padding: 30px 28px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  background: radial-gradient(ellipse at center, rgba(40,0,0,0.6), rgba(0,0,0,0.6));
+  box-shadow: 0 0 30px rgba(255,0,0,0.2);
+}
+#endOverlay h1 {
+  margin: 0 0 12px 0;
+  color: #ff5555;
+  text-shadow: 0 0 8px rgba(255,0,0,0.5);
+}
+#endOverlay p {
+  margin: 6px 0 18px 0;
+  font-size: 18px;
+}
+#restartBtn {
+  pointer-events: auto;
+  position: static;
+  padding: 10px 18px;
+  background: #1e1e1e;
+  color: #d6ffd6;
+  border: 1px solid #2c7a4b;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#restartBtn:hover {
+  background: #2a2a2a;
+}

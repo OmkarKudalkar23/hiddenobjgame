@@ -28,7 +28,18 @@ var isUserInteracting = false,
   listOfItems = [],
   loadCompliat = false,
   itemDelited = false,
-  obj;
+  obj,
+  // Game state
+  gameInitialized = false,
+  score = 0,
+  currentIndex = 0,
+  targets = [],
+  clueMap = {},
+  ui = {},
+  // Click vs drag detection
+  mouseDownX = 0,
+  mouseDownY = 0,
+  isDragging = false;
 
 init();
 animate();
@@ -105,8 +116,22 @@ function init() {
   document.addEventListener('mouseup', onDocumentMouseUp, false);
   document.addEventListener('wheel', onDocumentMouseWheel, false);
   document.addEventListener('touchstart', onDocumentTouchStart, false);
+  document.addEventListener('touchmove', onDocumentTouchMove, false);
   document.addEventListener('touchend', onDocumentTouchEnd, false);
   window.addEventListener('resize', onWindowResize, false);
+
+  // Cache UI elements
+  ui.clueBar = document.getElementById('clueBar');
+  ui.scoreValue = document.getElementById('scoreValue');
+  ui.scoreFlash = document.getElementById('scoreFlash');
+  ui.endOverlay = document.getElementById('endOverlay');
+  ui.finalScore = document.getElementById('finalScore');
+  ui.restartBtn = document.getElementById('restartBtn');
+  if (ui.restartBtn) {
+    ui.restartBtn.addEventListener('click', function () {
+      restartGame();
+    });
+  }
 }
 
 function onWindowResize() {
@@ -117,22 +142,12 @@ function onWindowResize() {
 
 function onDocumentMouseDown(event) {
   event.preventDefault();
-  var intersects = raycaster.intersectObjects(scene.children);
-  if (intersects.length < 3) {
-    var intersection = intersects[0],
-      obj = intersection.object;
-    if (obj.name !== 'backGround') {
-      obj.visible = false;
-      selectedItem = document.getElementById(obj.name);
-      selectedItem.style.textDecoration = 'line-through';
-      selectedItem.style.color = '#936868';
-      listOfItems.splice(listOfItems.indexOf(obj.name), 1);
-      itemDelited = true;
-    }
-  }
-
+  
   isUserInteracting = true;
+  isDragging = false;
 
+  mouseDownX = event.clientX;
+  mouseDownY = event.clientY;
   onPointerDownPointerX = event.clientX;
   onPointerDownPointerY = event.clientY;
 
@@ -143,44 +158,35 @@ function onDocumentMouseDown(event) {
 function onDocumentTouchStart(event) {
   event.preventDefault();
 
+  mouseDownX = event.touches[0].clientX;
+  mouseDownY = event.touches[0].clientY;
   onPointerDownPointerX = event.touches[0].clientX;
   onPointerDownPointerY = event.touches[0].clientY;
 
   onPointerDownLon = lon;
   onPointerDownLat = lat;
+  isDragging = false;
+}
 
-  if (touchSelect) {
-    mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
-    var intersects = raycaster.intersectObjects(scene.children);
-
-    if (intersects.length < 3 && intersects[0]) {
-
-      var intersection = intersects[0],
-        obj = intersection.object;
+function onDocumentTouchMove(event) {
+  if (event.touches.length > 0) {
+    var deltaX = Math.abs(event.touches[0].clientX - mouseDownX);
+    var deltaY = Math.abs(event.touches[0].clientY - mouseDownY);
+    // If touch moved more than 5 pixels, consider it a drag
+    if (deltaX > 5 || deltaY > 5) {
+      isDragging = true;
     }
   }
 }
 
 function onDocumentTouchEnd(event) {
-  var selectedItem;
-  mouse.x = (onPointerDownPointerX / window.innerWidth) * 2 - 1;
-  mouse.y = -(onPointerDownPointerY / window.innerHeight) * 2 + 1;
-  var intersects = raycaster.intersectObjects(scene.children);
-  if (intersects.length < 3) {
-    var intersection = intersects[0],
-      obj = intersection.object;
-    if (obj.name !== 'backGround') {
-      obj.visible = false;
-      selectedItem = document.getElementById(obj.name);
-      selectedItem.style.textDecoration = 'line-through';
-      selectedItem.style.color = '#936868';
-      listOfItems.splice(listOfItems.indexOf(obj.name), 1);
-      itemDelited = true;
-      obj = undefined;
-    }
-    touchSelect = true;
+  if (!isDragging) {
+    // This was a tap, not a drag - handle selection
+    mouse.x = (onPointerDownPointerX / window.innerWidth) * 2 - 1;
+    mouse.y = -(onPointerDownPointerY / window.innerHeight) * 2 + 1;
+    handleSelection();
   }
+  isDragging = false;
 }
 
 function onDocumentMouseMove(event) {
@@ -188,10 +194,26 @@ function onDocumentMouseMove(event) {
   event.preventDefault();
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  if (isUserInteracting) {
+    var deltaX = Math.abs(event.clientX - mouseDownX);
+    var deltaY = Math.abs(event.clientY - mouseDownY);
+    // If mouse moved more than 5 pixels, consider it a drag
+    if (deltaX > 5 || deltaY > 5) {
+      isDragging = true;
+    }
+  }
 }
 
 function onDocumentMouseUp(event) {
+  if (isUserInteracting && !isDragging) {
+    // This was a click, not a drag - handle selection
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    handleSelection();
+  }
   isUserInteracting = false;
+  isDragging = false;
 }
 
 function onDocumentMouseWheel(event) {
@@ -210,9 +232,9 @@ function animate() {
 }
 
 function update() {
-  if (listOfItems.length === 0 && loadCompliat && itemDelited) {
-    console.log('Congratulation You win');
-    itemDelited = false;
+  // Lazy init when items are loaded
+  if (loadCompliat && !gameInitialized) {
+    setupGame();
   }
   lat = Math.max(-85, Math.min(85, lat));
   phi = THREE.Math.degToRad(90 - lat);
@@ -225,6 +247,136 @@ function update() {
   camera.lookAt(camera.target);
 
   renderer.render(scene, camera);
+}
+
+// ===== Game Logic =====
+function setupGame() {
+  // Define targets and clues. Order matters.
+  targets = [
+    'Candlestick','Vase','Rake','Telepfone','Oil Lamp','Horse','Spider','Group','Teapot','Wood',
+    'Clock','Bucket','Book','Lamp','Teddy','Bat','Ball','Poster','Old clock','Old frame','Frame','Cup','Lock'
+  ];
+
+  clueMap = {
+    'Candlestick': 'Wax tears frozen in brass, I’ve watched long nights burn away.',
+    'Vase': 'Hollow throat of clay, once sipped the scent of dead flowers.',
+    'Rake': 'Iron fingers by the hearth, forever combing ashes for bones.',
+    'Telepfone': 'A distant voice entombed in wires, ringing after the caller is gone.',
+    'Oil Lamp': 'Glass belly and metal spine, I drink oil to birth a timid flame.',
+    'Horse': 'Silent steed of wood, gallops only in memories.',
+    'Spider': 'Threads of silence spun thin, a widow’s veil in the corner.',
+    'Group': 'Faces gather but never speak, captured mid-whisper.',
+    'Teapot': 'Porcelain throat pours warmth, now cold as the grave.',
+    'Wood': 'Splinters of yesterday’s forest, sleeping by the fire’s ghost.',
+    'Clock': 'I count the heartbeats of walls, yet my hands seldom move.',
+    'Bucket': 'A mouth with a metal grin, thirsty for the well’s secrets.',
+    'Book': 'Leather skin and paper bones, whispering learned curses.',
+    'Lamp': 'A blind eye on the ceiling, once blinking with light.',
+    'Teddy': 'A child’s guardian, stitched with forgotten lullabies.',
+    'Bat': 'Night’s folded dagger, hanging from dark rafters.',
+    'Ball': 'Round as a moon, chased by footsteps that no longer echo.',
+    'Poster': 'A paper window to elsewhere, stained by time’s breath.',
+    'Old clock': 'An elder of ticking halls, hoarding minutes like gold.',
+    'Old frame': 'A wooden ring for ghosts, holding what is missing.',
+    'Frame': 'Gilded teeth bite the wall, refusing to let go of memories.',
+    'Cup': 'A small chalice of warmth, now sipping only dust.',
+    'Lock': 'Iron secret-keeper, smiling without a key.'
+  };
+
+  // Ensure all targets exist and are visible
+  scene.children.forEach(function (o) {
+    if (o && o.name && o.name !== 'backGround') {
+      o.visible = true;
+    }
+  });
+
+  score = 0;
+  currentIndex = 0;
+  gameInitialized = true;
+  updateScore(0);
+  showClue(currentTargetName());
+}
+
+function currentTargetName() {
+  return targets[currentIndex];
+}
+
+function showClue(name) {
+  if (!ui.clueBar) return;
+  var text = clueMap[name] || ('Find: ' + name);
+  ui.clueBar.classList.remove('fade-out');
+  ui.clueBar.classList.add('fade-in');
+  ui.clueBar.textContent = text;
+}
+
+function nextClue() {
+  currentIndex++;
+  if (currentIndex >= targets.length) {
+    endGame();
+    return;
+  }
+  if (!ui.clueBar) return;
+  ui.clueBar.classList.remove('fade-in');
+  ui.clueBar.classList.add('fade-in');
+  ui.clueBar.textContent = clueMap[currentTargetName()] || ('Find: ' + currentTargetName());
+}
+
+function updateScore(delta) {
+  score += delta;
+  if (ui.scoreValue) ui.scoreValue.textContent = String(score);
+  if (ui.scoreFlash && delta !== 0) {
+    ui.scoreFlash.textContent = (delta > 0 ? '+' : '') + delta;
+    ui.scoreFlash.className = delta > 0 ? 'flash-green' : 'flash-red';
+    // Clear after animation ends
+    setTimeout(function(){ if (ui.scoreFlash) { ui.scoreFlash.textContent = ''; ui.scoreFlash.className=''; } }, 750);
+  }
+}
+
+function endGame() {
+  if (ui.finalScore) ui.finalScore.textContent = String(score);
+  if (ui.endOverlay) ui.endOverlay.classList.remove('hidden');
+}
+
+function restartGame() {
+  // Reset object visibility
+  scene.children.forEach(function (o) {
+    if (o && o.name && o.name !== 'backGround') {
+      o.visible = true;
+    }
+  });
+  if (ui.endOverlay) ui.endOverlay.classList.add('hidden');
+  score = 0;
+  currentIndex = 0;
+  updateScore(0);
+  showClue(currentTargetName());
+}
+
+function handleSelection() {
+  if (!gameInitialized) return;
+  // Compute intersections ignoring background
+  var intersects = raycaster.intersectObjects(scene.children, true).filter(function (hit) { return hit.object && hit.object.name !== 'backGround'; });
+  var hitObj = intersects.length > 0 ? intersects[0].object : null;
+
+  if (!hitObj || !hitObj.visible) {
+    // Empty space or already found
+    updateScore(-5);
+    return;
+  }
+
+  var expected = currentTargetName();
+  if (hitObj.name === expected) {
+    hitObj.visible = false;
+    updateScore(+10);
+    if (ui.clueBar) {
+      ui.clueBar.classList.remove('fade-in');
+      ui.clueBar.classList.add('fade-out');
+      setTimeout(function(){ nextClue(); }, 300);
+    } else {
+      nextClue();
+    }
+  } else {
+    updateScore(-5);
+  }
 }
 
 function render() {

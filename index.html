@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <title>
-            Hidden Object Game
+            Shadows of Bhangarh
         </title>
         <meta charset="utf-8" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" name="viewport">
         </meta>
@@ -11,6 +11,21 @@
     </head>
     <body>
         <div id="container">
+        </div>
+        <div id="uiRoot">
+            <div id="clueBar" class="fade-in">Clue will appear here...</div>
+            <div id="scorePanel">
+                <span id="scoreLabel">Score:</span>
+                <span id="scoreValue">0</span>
+                <span id="scoreFlash"></span>
+            </div>
+            <div id="endOverlay" class="hidden">
+                <div class="endContent">
+                    <h1>You survived the Shadows of Bhangarh</h1>
+                    <p>Total Score: <span id="finalScore">0</span></p>
+                    <button id="restartBtn">Play Again</button>
+                </div>
+            </div>
         </div>
         <script src="js/lib/three.js">
         </script>

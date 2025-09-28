@@ -313,35 +313,6 @@
   lock.position.set(80, -165, -70);
   lock.rotation.set(-0.5, -1.1, -0.01);
   scene.add(lock);
-
-  var itemContainer = document.createElement('div');
-  itemContainer.id = 'containerItems'
-  itemContainer.style.position = 'absolute';
-  itemContainer.style.top = '0px';
-  itemContainer.style.left = '0px';
-  itemContainer.style.color = '#E4E4E4';
-  itemContainer.style.padding = '5px 5px 5px 0px'
-  itemContainer.style.fontSize = '15px';
-  itemContainer.style.width = '100%';
-  itemContainer.style.fontFamily = 'Arial';
-  itemContainer.style.textAlign = 'center';
-  itemContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.4)';
-
-  container.appendChild(itemContainer);
-
-  var leftVar = 10;
-  var topVar = 10;
-  for (var i = 0; i < scene.children.length; i++) {
-    loadCompliat = true;
-    if (scene.children[i].name !== "backGround") {
-      var item = scene.children[i].name;
-      item = document.createElement('div');
-      item.id = scene.children[i].name;
-      item.style.display = 'inline-block';
-      item.style.padding = '3px 10px 3px 10px';
-      // item.style.width = '16.6%';
-      item.innerHTML = scene.children[i].name;
-      listOfItems.push(scene.children[i].name);
-      itemContainer.appendChild(item);
-    }
-  }
+  
+  // Mark that items have been loaded; UI will be handled by game logic
+  loadCompliat = true;
