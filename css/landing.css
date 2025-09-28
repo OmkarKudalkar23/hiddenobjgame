@@ -1,0 +1,261 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a0a0a 50%, #0a0a0a 100%);
+    color: #e5e5e5;
+    font-family: 'Georgia', serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.landing-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    padding: 40px 0;
+    border-bottom: 1px solid rgba(255, 0, 0, 0.2);
+    margin-bottom: 40px;
+}
+
+.game-title {
+    font-size: 3.5rem;
+    color: #ff4444;
+    text-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+    animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: #999;
+    font-style: italic;
+    letter-spacing: 1px;
+}
+
+@keyframes titleGlow {
+    from { text-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
+    to { text-shadow: 0 0 25px rgba(255, 0, 0, 0.9); }
+}
+
+/* Content */
+.content {
+    flex-grow: 1;
+    display: grid;
+    gap: 40px;
+}
+
+.story-section, .instructions-section, .controls-section, .tips-section {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 30px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.story-section h2, .instructions-section h2, .controls-section h2, .tips-section h2 {
+    color: #ff6666;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+    border-bottom: 2px solid rgba(255, 0, 0, 0.3);
+    padding-bottom: 10px;
+}
+
+.story-section p {
+    font-size: 1.1rem;
+    color: #ccc;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Instructions Grid */
+.instruction-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.instruction-item {
+    background: rgba(20, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 0, 0, 0.2);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.instruction-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 0, 0, 0.2);
+}
+
+.instruction-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.instruction-item h3 {
+    color: #ff8888;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.instruction-item p {
+    color: #bbb;
+    font-size: 0.9rem;
+}
+
+.points-positive {
+    color: #66ff66;
+    font-weight: bold;
+}
+
+.points-negative {
+    color: #ff6666;
+    font-weight: bold;
+}
+
+/* Controls Grid */
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.control-item {
+    background: rgba(10, 10, 10, 0.5);
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 3px solid #ff4444;
+    color: #ddd;
+}
+
+.control-item strong {
+    color: #ff8888;
+}
+
+/* Tips List */
+.tips-list {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.tips-list li {
+    background: rgba(10, 10, 10, 0.3);
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    border-left: 3px solid #ff6666;
+    color: #ccc;
+    position: relative;
+}
+
+.tips-list li:before {
+    content: "💀";
+    margin-right: 10px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 40px 0;
+    border-top: 1px solid rgba(255, 0, 0, 0.2);
+    margin-top: 40px;
+}
+
+.start-button {
+    background: linear-gradient(135deg, #cc0000 0%, #990000 100%);
+    border: 2px solid #ff4444;
+    color: white;
+    padding: 20px 40px;
+    font-size: 1.2rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Georgia', serif;
+}
+
+.start-button:hover {
+    background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+    box-shadow: 0 6px 30px rgba(255, 0, 0, 0.5);
+    transform: translateY(-2px);
+}
+
+.start-button:active {
+    transform: translateY(0);
+}
+
+.button-text {
+    font-size: 1.3rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.button-subtitle {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+.warning {
+    color: #ffaa00;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .game-title {
+        font-size: 2.5rem;
+    }
+    
+    .instruction-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .controls-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .landing-container {
+        padding: 15px;
+    }
+    
+    .story-section, .instructions-section, .controls-section, .tips-section {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-title {
+        font-size: 2rem;
+    }
+    
+    .start-button {
+        padding: 15px 30px;
+        font-size: 1rem;
+    }
+}

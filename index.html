@@ -19,12 +19,24 @@
                 <span id="scoreValue">0</span>
                 <span id="scoreFlash"></span>
             </div>
+            <button id="backToMenuBtn" class="back-button">← Back to Menu</button>
+            <button id="muteBtn" class="mute-button">🔊</button>
             <div id="endOverlay" class="hidden">
                 <div class="endContent">
                     <h1>You survived the Shadows of Bhangarh</h1>
                     <p>Total Score: <span id="finalScore">0</span></p>
-                    <button id="restartBtn">Play Again</button>
+                    <div class="end-buttons">
+                        <button id="restartBtn">Play Again</button>
+                        <button id="backToMenuFromEndBtn">Back to Menu</button>
+                    </div>
                 </div>
+            </div>
+            <div id="jumpscareOverlay" class="jumpscare-overlay hidden">
+                <video id="jumpscareVideo" class="jumpscare-video" preload="auto" muted>
+                    <source src="jumpscare/jumpscare.mp4" type="video/mp4">
+                    <source src="jumpscare/jumpscare.webm" type="video/webm">
+                    Your browser does not support the video tag.
+                </video>
             </div>
         </div>
         <script src="js/lib/three.js">

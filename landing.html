@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadows of Bhangarh - Hidden Object Horror Game</title>
+    <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+    <div class="landing-container">
+        <div class="header">
+            <h1 class="game-title">Shadows of Bhangarh</h1>
+            <p class="subtitle">A Horror Hidden Object Experience</p>
+        </div>
+
+        <div class="content">
+            <div class="story-section">
+                <h2>The Legend</h2>
+                <p>Deep within the cursed ruins of Bhangarh Fort lies a collection of haunted artifacts. Each object holds the memory of those who perished within these walls. Only by finding them all can you escape the shadows that bind this place.</p>
+            </div>
+
+            <div class="instructions-section">
+                <h2>How to Play</h2>
+                <div class="instruction-grid">
+                    <div class="instruction-item">
+                        <div class="instruction-icon">🔍</div>
+                        <h3>Read the Clue</h3>
+                        <p>Each riddle describes a hidden object in cryptic terms. Think carefully about what it might be.</p>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-icon">👆</div>
+                        <h3>Click to Find</h3>
+                        <p>Click on objects in the 3D scene. You can drag to look around without penalty.</p>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-icon">⚡</div>
+                        <h3>Score Points</h3>
+                        <p>Correct finds: <span class="points-positive">+10</span><br>Wrong clicks: <span class="points-negative">-5</span></p>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-icon">🎯</div>
+                        <h3>Sequential Hunt</h3>
+                        <p>Find objects one by one. Each clue leads to the next until all are discovered.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <h2>Controls</h2>
+                <div class="controls-grid">
+                    <div class="control-item">
+                        <strong>Mouse:</strong> Drag to look around, Click to select objects
+                    </div>
+                    <div class="control-item">
+                        <strong>Touch:</strong> Drag to navigate, Tap to select objects
+                    </div>
+                    <div class="control-item">
+                        <strong>Zoom:</strong> Mouse wheel or pinch gesture
+                    </div>
+                </div>
+            </div>
+
+            <div class="tips-section">
+                <h2>Survival Tips</h2>
+                <ul class="tips-list">
+                    <li>Read each clue carefully - they're riddles, not literal descriptions</li>
+                    <li>Look in dark corners and hidden spots</li>
+                    <li>Don't rush - wrong clicks cost you points</li>
+                    <li>Some objects are very small or partially hidden</li>
+                    <li>Navigate freely to explore every angle of the room</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            <button id="startGameBtn" class="start-button">
+                <span class="button-text">Enter the Shadows</span>
+                <span class="button-subtitle">Begin Your Hunt</span>
+            </button>
+            <p class="warning">⚠️ Best experienced with headphones for full atmospheric immersion</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('startGameBtn').addEventListener('click', function() {
+            // Fade out landing page and redirect to game
+            document.body.style.transition = 'opacity 0.5s ease-out';
+            document.body.style.opacity = '0';
+            setTimeout(function() {
+                window.location.href = 'index.html';
+            }, 500);
+        });
+
+        // Add some atmospheric effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Subtle text glow animation
+            const title = document.querySelector('.game-title');
+            setInterval(function() {
+                title.style.textShadow = `0 0 ${Math.random() * 20 + 10}px rgba(255, 0, 0, 0.7)`;
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

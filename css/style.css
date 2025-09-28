@@ -137,3 +137,100 @@ button {
 #restartBtn:hover {
   background: #2a2a2a;
 }
+
+.back-button {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  pointer-events: auto !important;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.7);
+  color: #ccc;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.back-button:hover {
+  background: rgba(0,0,0,0.9);
+  color: #fff;
+  border-color: rgba(255,255,255,0.4);
+}
+
+.end-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.end-buttons button {
+  flex: 1;
+  min-width: 120px;
+}
+
+.mute-button {
+  position: absolute;
+  top: 10px;
+  left: 140px;
+  pointer-events: auto !important;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.7);
+  color: #ccc;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  width: 40px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mute-button:hover {
+  background: rgba(0,0,0,0.9);
+  color: #fff;
+  border-color: rgba(255,255,255,0.4);
+}
+
+.mute-button.muted {
+  color: #ff6666;
+  border-color: rgba(255,0,0,0.4);
+}
+
+/* Jumpscare Overlay */
+.jumpscare-overlay.hidden { 
+  display: none; 
+}
+
+.jumpscare-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: jumpscareFlash 0.1s ease-in;
+}
+
+.jumpscare-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@keyframes jumpscareFlash {
+  0% { opacity: 0; }
+  50% { opacity: 1; background: #ff0000; }
+  100% { opacity: 1; background: #000; }
+}

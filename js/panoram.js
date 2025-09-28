@@ -39,7 +39,16 @@ var isUserInteracting = false,
   // Click vs drag detection
   mouseDownX = 0,
   mouseDownY = 0,
-  isDragging = false;
+  isDragging = false,
+  // Audio
+  correctSound = null,
+  wrongSound = null,
+  backgroundMusic = null,
+  audioEnabled = true,
+  // Jumpscare
+  jumpscareTimer = null,
+  jumpscareTriggered = false,
+  gameStartTime = null;
 
 init();
 animate();
@@ -127,11 +136,40 @@ function init() {
   ui.endOverlay = document.getElementById('endOverlay');
   ui.finalScore = document.getElementById('finalScore');
   ui.restartBtn = document.getElementById('restartBtn');
+  ui.backToMenuBtn = document.getElementById('backToMenuBtn');
+  ui.backToMenuFromEndBtn = document.getElementById('backToMenuFromEndBtn');
+  ui.muteBtn = document.getElementById('muteBtn');
+  ui.jumpscareOverlay = document.getElementById('jumpscareOverlay');
+  ui.jumpscareVideo = document.getElementById('jumpscareVideo');
+  
   if (ui.restartBtn) {
     ui.restartBtn.addEventListener('click', function () {
       restartGame();
     });
   }
+  
+  if (ui.backToMenuBtn) {
+    ui.backToMenuBtn.addEventListener('click', function () {
+      stopBackgroundMusic();
+      window.location.href = 'landing.html';
+    });
+  }
+  
+  if (ui.backToMenuFromEndBtn) {
+    ui.backToMenuFromEndBtn.addEventListener('click', function () {
+      stopBackgroundMusic();
+      window.location.href = 'landing.html';
+    });
+  }
+  
+  if (ui.muteBtn) {
+    ui.muteBtn.addEventListener('click', function () {
+      toggleMute();
+    });
+  }
+
+  // Initialize audio
+  initAudio();
 }
 
 function onWindowResize() {
@@ -295,6 +333,12 @@ function setupGame() {
   gameInitialized = true;
   updateScore(0);
   showClue(currentTargetName());
+  
+  // Start background music
+  startBackgroundMusic();
+  
+  // Start jumpscare timer (1 minute)
+  startJumpscareTimer();
 }
 
 function currentTargetName() {
@@ -327,6 +371,18 @@ function updateScore(delta) {
   if (ui.scoreFlash && delta !== 0) {
     ui.scoreFlash.textContent = (delta > 0 ? '+' : '') + delta;
     ui.scoreFlash.className = delta > 0 ? 'flash-green' : 'flash-red';
+    
+    // Play sound effect
+    if (audioEnabled) {
+      if (delta > 0 && correctSound) {
+        correctSound.currentTime = 0;
+        correctSound.play().catch(function(e) { console.log('Audio play failed:', e); });
+      } else if (delta < 0 && wrongSound) {
+        wrongSound.currentTime = 0;
+        wrongSound.play().catch(function(e) { console.log('Audio play failed:', e); });
+      }
+    }
+    
     // Clear after animation ends
     setTimeout(function(){ if (ui.scoreFlash) { ui.scoreFlash.textContent = ''; ui.scoreFlash.className=''; } }, 750);
   }
@@ -349,6 +405,13 @@ function restartGame() {
   currentIndex = 0;
   updateScore(0);
   showClue(currentTargetName());
+  
+  // Reset jumpscare
+  jumpscareTriggered = false;
+  if (jumpscareTimer) {
+    clearTimeout(jumpscareTimer);
+  }
+  startJumpscareTimer();
 }
 
 function handleSelection() {
@@ -408,4 +471,156 @@ function render() {
   }
 
   renderer.render(scene, camera);
+}
+
+// ===== Audio System =====
+function initAudio() {
+  try {
+    // Initialize correct sound
+    correctSound = new Audio('audio/correct.mp3');
+    correctSound.preload = 'auto';
+    correctSound.volume = 0.7;
+    
+    // Initialize wrong sound
+    wrongSound = new Audio('audio/wrong.mp3');
+    wrongSound.preload = 'auto';
+    wrongSound.volume = 0.5;
+    
+    // Initialize background music
+    backgroundMusic = new Audio('audio/background.mp3');
+    backgroundMusic.preload = 'auto';
+    backgroundMusic.volume = 0.3;
+    backgroundMusic.loop = true;
+    
+    // Handle audio loading errors gracefully
+    correctSound.onerror = function() {
+      console.log('Could not load correct sound effect');
+      correctSound = null;
+    };
+    
+    wrongSound.onerror = function() {
+      console.log('Could not load wrong sound effect');
+      wrongSound = null;
+    };
+    
+    backgroundMusic.onerror = function() {
+      console.log('Could not load background music');
+      backgroundMusic = null;
+    };
+    
+  } catch (e) {
+    console.log('Audio initialization failed:', e);
+    audioEnabled = false;
+  }
+}
+
+function startBackgroundMusic() {
+  if (audioEnabled && backgroundMusic) {
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.play().catch(function(e) { 
+      console.log('Background music play failed:', e); 
+    });
+  }
+}
+
+function stopBackgroundMusic() {
+  if (backgroundMusic) {
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+  }
+}
+
+function toggleMute() {
+  audioEnabled = !audioEnabled;
+  
+  if (ui.muteBtn) {
+    if (audioEnabled) {
+      ui.muteBtn.textContent = '🔊';
+      ui.muteBtn.classList.remove('muted');
+      // Resume background music if it was playing
+      if (gameInitialized && backgroundMusic) {
+        backgroundMusic.play().catch(function(e) { 
+          console.log('Background music resume failed:', e); 
+        });
+      }
+    } else {
+      ui.muteBtn.textContent = '🔇';
+      ui.muteBtn.classList.add('muted');
+      // Pause all audio
+      if (backgroundMusic) {
+        backgroundMusic.pause();
+      }
+    }
+  }
+}
+
+// ===== Jumpscare System =====
+function startJumpscareTimer() {
+  if (jumpscareTriggered) return;
+  
+  gameStartTime = Date.now();
+  jumpscareTimer = setTimeout(function() {
+    triggerJumpscare();
+  }, 60000); // 1 minute = 60000ms
+}
+
+function triggerJumpscare() {
+  if (jumpscareTriggered || !gameInitialized) return;
+  
+  jumpscareTriggered = true;
+  
+  // Pause background music
+  if (backgroundMusic) {
+    backgroundMusic.pause();
+  }
+  
+  // Show jumpscare overlay
+  if (ui.jumpscareOverlay) {
+    ui.jumpscareOverlay.classList.remove('hidden');
+  }
+  
+  // Play jumpscare video
+  if (ui.jumpscareVideo) {
+    ui.jumpscareVideo.muted = false; // Unmute for jumpscare effect
+    ui.jumpscareVideo.volume = 0.8;
+    ui.jumpscareVideo.currentTime = 0;
+    
+    ui.jumpscareVideo.play().catch(function(e) {
+      console.log('Jumpscare video play failed:', e);
+      // If video fails, just hide overlay after 3 seconds
+      setTimeout(function() {
+        hideJumpscare();
+      }, 3000);
+    });
+    
+    // Hide jumpscare when video ends
+    ui.jumpscareVideo.onended = function() {
+      hideJumpscare();
+    };
+    
+    // Fallback: hide after 10 seconds max
+    setTimeout(function() {
+      if (!ui.jumpscareOverlay.classList.contains('hidden')) {
+        hideJumpscare();
+      }
+    }, 10000);
+  }
+}
+
+function hideJumpscare() {
+  if (ui.jumpscareOverlay) {
+    ui.jumpscareOverlay.classList.add('hidden');
+  }
+  
+  if (ui.jumpscareVideo) {
+    ui.jumpscareVideo.pause();
+    ui.jumpscareVideo.muted = true;
+  }
+  
+  // Resume background music if audio is enabled
+  if (audioEnabled && backgroundMusic && gameInitialized) {
+    backgroundMusic.play().catch(function(e) {
+      console.log('Background music resume after jumpscare failed:', e);
+    });
+  }
 }
