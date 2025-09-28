@@ -428,18 +428,95 @@ function handleSelection() {
 
   var expected = currentTargetName();
   if (hitObj.name === expected) {
-    hitObj.visible = false;
+    // Start the smooth animation sequence
+    animateCorrectObject(hitObj);
     updateScore(+10);
     if (ui.clueBar) {
       ui.clueBar.classList.remove('fade-in');
       ui.clueBar.classList.add('fade-out');
-      setTimeout(function(){ nextClue(); }, 300);
+      setTimeout(function(){ nextClue(); }, 2200); // Increased delay for longer animation
     } else {
-      nextClue();
+      setTimeout(function(){ nextClue(); }, 2200);
     }
   } else {
     updateScore(-5);
   }
+}
+
+function animateCorrectObject(object) {
+  if (!object) return;
+  
+  // Store original properties
+  var originalPosition = object.position.clone();
+  var originalScale = object.scale.clone();
+  var originalOpacity = object.material.opacity !== undefined ? object.material.opacity : 1;
+  
+  // Make sure material supports transparency
+  if (object.material) {
+    object.material.transparent = true;
+  }
+  
+  // Animation parameters
+  var animationDuration = 2000; // 2 seconds total
+  var scalePhase = 500; // First 500ms for scaling
+  var movePhase = 1000; // Next 1000ms for moving to center (slower)
+  var fadePhase = 500; // Last 500ms for fading out
+  
+  var startTime = Date.now();
+  
+  // Calculate center position (convert screen center to world position)
+  var centerPosition = new THREE.Vector3(0, 0, -50); // Closer to camera for visibility
+  
+  function animateFrame() {
+    var elapsed = Date.now() - startTime;
+    var progress = Math.min(elapsed / animationDuration, 1);
+    
+    if (progress < scalePhase / animationDuration) {
+      // Phase 1: Scale up
+      var scaleProgress = (elapsed / scalePhase);
+      var easeScale = 1 - Math.pow(1 - scaleProgress, 3); // Ease out cubic
+      var scale = 1 + (easeScale * 0.5); // Scale up to 1.5x
+      object.scale.setScalar(scale);
+      
+    } else if (progress < (scalePhase + movePhase) / animationDuration) {
+      // Phase 2: Move to center while maintaining scale
+      var moveProgress = (elapsed - scalePhase) / movePhase;
+      var easeMove = 1 - Math.pow(1 - moveProgress, 4); // Ease out quartic (smoother)
+      
+      // Interpolate position to center
+      object.position.lerpVectors(originalPosition, centerPosition, easeMove);
+      
+    } else {
+      // Phase 3: Fade out
+      var fadeProgress = (elapsed - scalePhase - movePhase) / fadePhase;
+      var easeFade = fadeProgress; // Linear fade
+      
+      // Ensure object is at center
+      object.position.copy(centerPosition);
+      
+      // Fade out
+      if (object.material) {
+        object.material.opacity = originalOpacity * (1 - easeFade);
+      }
+    }
+    
+    if (progress < 1) {
+      requestAnimationFrame(animateFrame);
+    } else {
+      // Animation complete - hide object
+      object.visible = false;
+      
+      // Reset properties for potential future use
+      object.position.copy(originalPosition);
+      object.scale.copy(originalScale);
+      if (object.material) {
+        object.material.opacity = originalOpacity;
+      }
+    }
+  }
+  
+  // Start animation
+  requestAnimationFrame(animateFrame);
 }
 
 function render() {
