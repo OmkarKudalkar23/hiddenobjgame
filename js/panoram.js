@@ -36,6 +36,14 @@ var isUserInteracting = false,
   targets = [],
   clueMap = {},
   ui = {},
+  // Multi-room system
+  currentRoom = 0,
+  rooms = [],
+  doorObject = null,
+  isTransitioning = false,
+  roomsUnlocked = 1, // Only first room unlocked initially
+  roomScores = [], // Track score for each room
+  totalScore = 0,
   // Click vs drag detection
   mouseDownX = 0,
   mouseDownY = 0,
@@ -50,37 +58,89 @@ var isUserInteracting = false,
   jumpscareTriggered = false,
   gameStartTime = null;
 
-init();
-animate();
+console.log('🔧 Starting game initialization...');
+console.log('THREE.js available:', typeof THREE !== 'undefined');
+console.log('VirtualJoystick available:', typeof VirtualJoystick !== 'undefined');
+
+try {
+  init();
+  animate();
+  console.log('✅ Init and animate called successfully');
+} catch (error) {
+  console.error('❌ Error during initialization:', error);
+}
 
 function init() {
+  console.log('🚀 Initializing 3D scene...');
 
   var container, mesh;
 
   container = document.getElementById('container');
+  console.log('Container element found:', !!container);
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
+  camera.position.set(0, 0, 0); // Ensure camera is at center
   camera.target = new THREE.Vector3(0, 0, 0);
+  console.log('📷 Camera created at position:', camera.position);
+  console.log('📷 Camera target:', camera.target);
 
   scene = new THREE.Scene();
 
   var geometry = new THREE.SphereGeometry(600, 60, 40);
   geometry.scale(-1, 1, 1);
 
+  // Create mesh with NO texture initially - loadRoom() will set it
   var material = new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load('assets/bg.jpg')
+    color: 0x333333, // Dark gray instead of black for better debugging
+    side: THREE.DoubleSide // Show material on both sides for debugging
   });
 
   mesh = new THREE.Mesh(geometry, material);
   mesh.name = 'backGround';
   scene.add(mesh);
+  
+  console.log('Background mesh created, loading initial texture...');
+  
+  // Load initial background immediately (Room 0 background)
+  var initialLoader = new THREE.TextureLoader();
+  initialLoader.load(
+    'assets/bg.jpg',
+    function(texture) {
+      console.log('✅ Initial background loaded successfully');
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      
+      mesh.material = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide
+      });
+      mesh.material.needsUpdate = true;
+      
+      // Force immediate render
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+      console.log('✅ Initial background applied to mesh and rendered');
+    },
+    function(progress) {
+      console.log('Initial texture loading:', Math.round((progress.loaded / progress.total) * 100) + '%');
+    },
+    function(error) {
+      console.error('❌ Failed to load initial background:', error);
+    }
+  );
 
   raycaster = new THREE.Raycaster();
 
   renderer = new THREE.WebGLRenderer();
+  console.log('✅ WebGL Renderer created');
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
+  console.log('✅ Renderer size set:', window.innerWidth, 'x', window.innerHeight);
   container.appendChild(renderer.domElement);
+  console.log('✅ Renderer canvas added to container');
 
   var clock = new THREE.Clock();
 
@@ -141,6 +201,9 @@ function init() {
   ui.muteBtn = document.getElementById('muteBtn');
   ui.jumpscareOverlay = document.getElementById('jumpscareOverlay');
   ui.jumpscareVideo = document.getElementById('jumpscareVideo');
+  ui.roomProgress = document.getElementById('roomProgress');
+  ui.doorTransitionOverlay = document.getElementById('doorTransitionOverlay');
+  ui.doorTransitionVideo = document.getElementById('doorTransitionVideo');
   
   if (ui.restartBtn) {
     ui.restartBtn.addEventListener('click', function () {
@@ -170,6 +233,9 @@ function init() {
 
   // Initialize audio
   initAudio();
+  
+  // Enable video playback after first user interaction
+  enableVideoPlayback();
 }
 
 function onWindowResize() {
@@ -272,7 +338,11 @@ function animate() {
 function update() {
   // Lazy init when items are loaded
   if (loadCompliat && !gameInitialized) {
+    console.log('Items loaded, initializing game...');
     setupGame();
+  } else if (!loadCompliat) {
+    // Debug: Check if items are still loading
+    console.log('Waiting for items to load... loadCompliat:', loadCompliat);
   }
   lat = Math.max(-85, Math.min(85, lat));
   phi = THREE.Math.degToRad(90 - lat);
@@ -284,15 +354,56 @@ function update() {
 
   camera.lookAt(camera.target);
 
+  // Debug: Check if renderer is working
+  if (!renderer) {
+    console.error('❌ Renderer not initialized!');
+    return;
+  }
+  
   renderer.render(scene, camera);
 }
 
 // ===== Game Logic =====
 function setupGame() {
-  // Define targets and clues. Order matters.
-  targets = [
-    'Candlestick','Vase','Rake','Telepfone','Oil Lamp','Horse','Spider','Group','Teapot','Wood',
-    'Clock','Bucket','Book','Lamp','Teddy','Bat','Ball','Poster','Old clock','Old frame','Frame','Cup','Lock'
+  console.log('=== setupGame() called ===');
+  
+  // Define rooms with their backgrounds and objects
+  rooms = [
+    {
+      name: 'The Entrance Hall',
+      background: 'assets/bg.jpg',
+      objects: ['Candlestick', 'Vase', 'Rake', 'Telepfone', 'Oil Lamp'],
+      doorPosition: { x: 0, y: -50, z: -250 },
+      doorRotation: { x: 0, y: 0, z: 0 }
+    },
+    {
+      name: 'The Living Room',
+      background: 'assets/bg2.jpg',
+      objects: ['Horse', 'Spider', 'Group', 'Teapot', 'Wood'],
+      doorPosition: { x: 200, y: -80, z: -200 },
+      doorRotation: { x: 0, y: -0.5, z: 0 }
+    },
+    {
+      name: 'The Study',
+      background: 'assets/bg3.jpg',
+      objects: ['Clock', 'Bucket', 'Book', 'Lamp', 'Teddy'],
+      doorPosition: { x: -150, y: -60, z: -220 },
+      doorRotation: { x: 0, y: 0.3, z: 0 }
+    },
+    {
+      name: 'The Attic',
+      background: 'assets/bg4.jpg',
+      objects: ['Bat', 'Ball', 'Poster', 'Old clock', 'Old frame'],
+      doorPosition: { x: 100, y: 0, z: -230 },
+      doorRotation: { x: 0, y: -0.2, z: 0 }
+    },
+    {
+      name: 'The Final Chamber',
+      background: 'assets/items/bg.png',
+      objects: ['Frame', 'Cup', 'Lock'],
+      doorPosition: null, // No door in final room
+      doorRotation: null
+    }
   ];
 
   clueMap = {
@@ -321,18 +432,50 @@ function setupGame() {
     'Lock': 'Iron secret-keeper, smiling without a key.'
   };
 
-  // Ensure all targets exist and are visible
-  scene.children.forEach(function (o) {
-    if (o && o.name && o.name !== 'backGround') {
-      o.visible = true;
-    }
-  });
-
   score = 0;
   currentIndex = 0;
+  isTransitioning = false;
   gameInitialized = true;
+  
+  // Load unlocked rooms from localStorage
+  var savedUnlocked = localStorage.getItem('roomsUnlocked');
+  if (savedUnlocked) {
+    roomsUnlocked = parseInt(savedUnlocked);
+    console.log('Loaded unlocked rooms from storage:', roomsUnlocked);
+  }
+  
+  // Initialize room scores array
+  roomScores = [];
+  for (var i = 0; i < rooms.length; i++) {
+    roomScores.push(0);
+  }
+  
   updateScore(0);
-  showClue(currentTargetName());
+  
+  // Check if a specific room was requested via URL parameter
+  var urlParams = new URLSearchParams(window.location.search);
+  var requestedRoom = urlParams.get('room');
+  
+  if (requestedRoom !== null) {
+    var requestedIndex = parseInt(requestedRoom);
+    // Security: Only allow access to unlocked rooms
+    if (requestedIndex < roomsUnlocked) {
+      currentRoom = requestedIndex;
+      console.log('Starting with room from URL:', currentRoom);
+    } else {
+      console.log('⚠️ Room', requestedIndex, 'is locked! Starting with room 0');
+      currentRoom = 0;
+      // Redirect to remove invalid room parameter
+      window.history.replaceState({}, '', 'index.html');
+    }
+  } else {
+    currentRoom = 0;
+  }
+  
+  // Initialize room
+  console.log('🎮 About to load initial room:', currentRoom);
+  console.log('🎮 Room data:', rooms[currentRoom]);
+  loadRoom(currentRoom);
   
   // Start background music
   startBackgroundMusic();
@@ -355,8 +498,39 @@ function showClue(name) {
 
 function nextClue() {
   currentIndex++;
+  console.log('nextClue - currentIndex:', currentIndex, 'targets.length:', targets.length);
+  console.log('rooms array:', rooms);
+  console.log('gameInitialized:', gameInitialized, 'isTransitioning:', isTransitioning);
+  
   if (currentIndex >= targets.length) {
-    endGame();
+    // All objects in current room found
+    console.log('All objects found in room', currentRoom);
+    console.log('Current room:', currentRoom, 'Total rooms:', rooms ? rooms.length : 'rooms is undefined!');
+    
+    // Safety check: Don't show door animation if game just started or already transitioning
+    if (!gameInitialized || isTransitioning) {
+      console.log('⚠️ Preventing door animation - game not ready or already transitioning');
+      return;
+    }
+    
+    if (rooms && currentRoom < rooms.length - 1) {
+      // More rooms to go - show door animation
+      console.log('Showing door animation for next room');
+      
+      // Show completion message
+      if (ui.clueBar) {
+        ui.clueBar.textContent = 'Room Complete! Moving to next room...';
+      }
+      
+      // Transition after short delay
+      setTimeout(function() {
+        showDoorAnimation();
+      }, 1000);
+    } else {
+      // Final room complete - end game
+      console.log('Final room complete - ending game');
+      endGame();
+    }
     return;
   }
   if (!ui.clueBar) return;
@@ -367,6 +541,8 @@ function nextClue() {
 
 function updateScore(delta) {
   score += delta;
+  roomScores[currentRoom] += delta; // Track score for current room
+  
   if (ui.scoreValue) ui.scoreValue.textContent = String(score);
   if (ui.scoreFlash && delta !== 0) {
     ui.scoreFlash.textContent = (delta > 0 ? '+' : '') + delta;
@@ -389,22 +565,84 @@ function updateScore(delta) {
 }
 
 function endGame() {
-  if (ui.finalScore) ui.finalScore.textContent = String(score);
-  if (ui.endOverlay) ui.endOverlay.classList.remove('hidden');
+  totalScore = score;
+  
+  if (ui.endOverlay) {
+    ui.endOverlay.classList.remove('hidden');
+    
+    // Update victory message
+    var victoryTitle = ui.endOverlay.querySelector('h1');
+    if (victoryTitle) {
+      victoryTitle.textContent = "You've Conquered the Shadows of Bhangarh!";
+    }
+    
+    // Display total score
+    if (ui.finalScore) {
+      ui.finalScore.textContent = String(totalScore);
+    }
+    
+    // Create room-by-room score breakdown
+    var endContent = ui.endOverlay.querySelector('.endContent');
+    if (endContent) {
+      // Remove old breakdown if exists
+      var oldBreakdown = endContent.querySelector('.score-breakdown');
+      if (oldBreakdown) {
+        oldBreakdown.remove();
+      }
+      
+      // Create new breakdown
+      var breakdown = document.createElement('div');
+      breakdown.className = 'score-breakdown';
+      breakdown.style.margin = '20px 0';
+      breakdown.style.padding = '15px';
+      breakdown.style.background = 'rgba(0,0,0,0.3)';
+      breakdown.style.borderRadius = '8px';
+      breakdown.style.border = '1px solid rgba(255,255,255,0.1)';
+      
+      var breakdownTitle = document.createElement('h3');
+      breakdownTitle.textContent = 'Room Scores:';
+      breakdownTitle.style.color = '#ff9800';
+      breakdownTitle.style.marginBottom = '10px';
+      breakdown.appendChild(breakdownTitle);
+      
+      for (var i = 0; i < rooms.length; i++) {
+        var roomScore = document.createElement('div');
+        roomScore.style.padding = '5px 0';
+        roomScore.style.color = '#ccc';
+        roomScore.innerHTML = '<strong>' + rooms[i].name + ':</strong> ' + 
+                              '<span style="color: ' + (roomScores[i] >= 0 ? '#4CAF50' : '#ff4444') + 
+                              '; font-weight: bold;">' + roomScores[i] + ' points</span>';
+        breakdown.appendChild(roomScore);
+      }
+      
+      // Insert before buttons
+      var buttons = endContent.querySelector('.end-buttons');
+      if (buttons) {
+        endContent.insertBefore(breakdown, buttons);
+      } else {
+        endContent.appendChild(breakdown);
+      }
+    }
+  }
 }
 
 function restartGame() {
-  // Reset object visibility
-  scene.children.forEach(function (o) {
-    if (o && o.name && o.name !== 'backGround') {
-      o.visible = true;
-    }
-  });
   if (ui.endOverlay) ui.endOverlay.classList.add('hidden');
   score = 0;
   currentIndex = 0;
+  currentRoom = 0;
+  roomsUnlocked = 1; // Reset to only first room unlocked
+  
+  // Reset room scores
+  roomScores = [];
+  for (var i = 0; i < rooms.length; i++) {
+    roomScores.push(0);
+  }
+  
   updateScore(0);
-  showClue(currentTargetName());
+  
+  // Reload first room
+  loadRoom(0);
   
   // Reset jumpscare
   jumpscareTriggered = false;
@@ -415,9 +653,11 @@ function restartGame() {
 }
 
 function handleSelection() {
-  if (!gameInitialized) return;
-  // Compute intersections ignoring background
-  var intersects = raycaster.intersectObjects(scene.children, true).filter(function (hit) { return hit.object && hit.object.name !== 'backGround'; });
+  if (!gameInitialized || isTransitioning) return;
+  // Compute intersections ignoring background and door
+  var intersects = raycaster.intersectObjects(scene.children, true).filter(function (hit) { 
+    return hit.object && hit.object.name !== 'backGround' && hit.object.name !== 'door'; 
+  });
   var hitObj = intersects.length > 0 ? intersects[0].object : null;
 
   if (!hitObj || !hitObj.visible) {
@@ -548,6 +788,35 @@ function render() {
   }
 
   renderer.render(scene, camera);
+}
+
+// ===== Video System =====
+function enableVideoPlayback() {
+  var videoEnabled = false;
+  
+  function enableVideos() {
+    if (videoEnabled) return;
+    videoEnabled = true;
+    
+    console.log('🎬 Enabling video playback after user interaction');
+    
+    // Prepare door transition video
+    if (ui.doorTransitionVideo) {
+      ui.doorTransitionVideo.load(); // Reload video to ensure it's ready
+      console.log('✅ Door transition video prepared');
+    }
+    
+    // Prepare jumpscare video
+    if (ui.jumpscareVideo) {
+      ui.jumpscareVideo.load();
+      console.log('✅ Jumpscare video prepared');
+    }
+  }
+  
+  // Enable videos on first user interaction
+  document.addEventListener('click', enableVideos, { once: true });
+  document.addEventListener('touchstart', enableVideos, { once: true });
+  document.addEventListener('keydown', enableVideos, { once: true });
 }
 
 // ===== Audio System =====
@@ -699,5 +968,411 @@ function hideJumpscare() {
     backgroundMusic.play().catch(function(e) {
       console.log('Background music resume after jumpscare failed:', e);
     });
+  }
+}
+
+// ===== Multi-Room System =====
+function loadRoom(roomIndex) {
+  console.log('====== loadRoom called ======');
+  console.log('Requested room index:', roomIndex);
+  console.log('Current room before change:', currentRoom);
+  console.log('Total rooms:', rooms.length);
+  console.log('Stack trace:');
+  console.trace();
+  
+  if (roomIndex < 0 || roomIndex >= rooms.length) {
+    console.error('❌ Invalid room index:', roomIndex);
+    return;
+  }
+  
+  var room = rooms[roomIndex];
+  console.log('Setting currentRoom from', currentRoom, 'to', roomIndex);
+  currentRoom = roomIndex;
+  console.log('✅ Loading room:', room.name, '(index:', currentRoom, ')');
+  
+  // Update background with simplified approach
+  var backgroundMesh = scene.getObjectByName('backGround');
+  if (backgroundMesh) {
+    console.log('🔄 Loading background texture:', room.background);
+    
+    // Create new texture loader with immediate loading
+    var loader = new THREE.TextureLoader();
+    
+    // Load texture synchronously with error handling
+    try {
+      loader.load(
+        room.background,
+        // Success
+        function(texture) {
+          console.log('✅ Texture loaded successfully:', room.background);
+          
+          // Configure texture
+          texture.wrapS = THREE.ClampToEdgeWrapping;
+          texture.wrapT = THREE.ClampToEdgeWrapping;
+          texture.minFilter = THREE.LinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          
+          // Dispose old material if exists
+          if (backgroundMesh.material && backgroundMesh.material.map) {
+            backgroundMesh.material.map.dispose();
+          }
+          if (backgroundMesh.material) {
+            backgroundMesh.material.dispose();
+          }
+          
+          // Create new material
+          backgroundMesh.material = new THREE.MeshBasicMaterial({
+            map: texture,
+            side: THREE.DoubleSide
+          });
+          backgroundMesh.material.needsUpdate = true;
+          
+          // Force immediate render
+          if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+          }
+          
+          console.log('✅ Background material updated and rendered successfully');
+        },
+        // Progress
+        function(progress) {
+          console.log('Loading progress:', Math.round((progress.loaded / progress.total) * 100) + '%');
+        },
+        // Error
+        function(error) {
+          console.error('❌ Failed to load texture:', room.background);
+          console.error('Error details:', error);
+          
+          // Create fallback colored material
+          if (backgroundMesh.material) {
+            backgroundMesh.material.dispose();
+          }
+          backgroundMesh.material = new THREE.MeshBasicMaterial({
+            color: 0x444444,
+            side: THREE.DoubleSide
+          });
+          console.log('🔄 Applied fallback colored background');
+        }
+      );
+    } catch (e) {
+      console.error('❌ Exception during texture loading:', e);
+      // Emergency fallback
+      backgroundMesh.material = new THREE.MeshBasicMaterial({
+        color: 0x444444,
+        side: THREE.DoubleSide
+      });
+    }
+  } else {
+    console.error('❌ Background mesh not found in scene!');
+  }
+  
+  // Hide all objects first
+  scene.children.forEach(function (o) {
+    if (o && o.name && o.name !== 'backGround' && o.name !== 'door') {
+      o.visible = false;
+    }
+  });
+  
+  // Show only objects for this room
+  room.objects.forEach(function(objName) {
+    var obj = scene.getObjectByName(objName);
+    if (obj) {
+      obj.visible = true;
+      console.log('Showing object:', objName);
+    } else {
+      console.log('Object not found:', objName);
+    }
+  });
+  
+  // Remove old door if exists
+  if (doorObject) {
+    scene.remove(doorObject);
+    doorObject = null;
+  }
+  
+  // Add door if not final room
+  if (room.doorPosition) {
+    createDoor(room.doorPosition, room.doorRotation);
+    console.log('Door created at position:', room.doorPosition);
+  } else {
+    console.log('No door for final room');
+  }
+  
+  // Reset targets for this room
+  targets = room.objects.slice();
+  currentIndex = 0;
+  console.log('Targets for this room:', targets);
+  
+  // Show room name and first clue
+  showRoomTransition(room.name);
+  
+  // Add room info to clue bar temporarily
+  if (ui.clueBar) {
+    ui.clueBar.textContent = 'Loading ' + room.name + '...';
+  }
+  
+  setTimeout(function() {
+    showClue(currentTargetName());
+  }, 2000);
+}
+
+function createDoor(position, rotation) {
+  // Create a simple door using planes
+  var doorGeometry = new THREE.PlaneGeometry(80, 150);
+  
+  // Create door material with a dark wood color
+  var doorMaterial = new THREE.MeshBasicMaterial({
+    color: 0x3d2817,
+    side: THREE.DoubleSide
+  });
+  
+  doorObject = new THREE.Mesh(doorGeometry, doorMaterial);
+  doorObject.name = 'door';
+  doorObject.position.set(position.x, position.y, position.z);
+  doorObject.rotation.set(rotation.x, rotation.y, rotation.z);
+  doorObject.visible = false; // Hidden until all objects found
+  
+  // Add door frame
+  var frameMaterial = new THREE.MeshBasicMaterial({
+    color: 0x1a0f0a,
+    side: THREE.DoubleSide
+  });
+  
+  var frameGeometry = new THREE.PlaneGeometry(90, 160);
+  var doorFrame = new THREE.Mesh(frameGeometry, frameMaterial);
+  doorFrame.position.set(0, 0, -1);
+  doorObject.add(doorFrame);
+  
+  scene.add(doorObject);
+}
+
+function showDoorAnimation() {
+  console.log('showDoorAnimation called');
+  console.log('currentRoom before transition:', currentRoom);
+  console.log('gameInitialized:', gameInitialized, 'currentIndex:', currentIndex, 'targets.length:', targets.length);
+  
+  // Safety check: Don't show door animation if conditions aren't met
+  if (!gameInitialized) {
+    console.log('⚠️ Aborting door animation - game not initialized');
+    return;
+  }
+  
+  if (isTransitioning) {
+    console.log('⚠️ Aborting door animation - already transitioning');
+    return;
+  }
+  
+  if (currentRoom === 0 && currentIndex === 0) {
+    console.log('⚠️ Aborting door animation - still in first room, no objects found');
+    return;
+  }
+  
+  isTransitioning = true;
+  
+  // Show message
+  if (ui.clueBar) {
+    ui.clueBar.textContent = 'The door opens... Enter to continue your journey.';
+    ui.clueBar.classList.add('fade-in');
+  }
+  
+  // Play door opening video
+  if (ui.doorTransitionOverlay && ui.doorTransitionVideo) {
+    console.log('Playing door opening video...');
+    
+    // Show the overlay
+    ui.doorTransitionOverlay.classList.remove('hidden');
+    
+    // Reset video and ensure it's ready to play
+    ui.doorTransitionVideo.currentTime = 0;
+    ui.doorTransitionVideo.muted = false; // Ensure it's not muted
+    ui.doorTransitionVideo.volume = 0.8;
+    
+    // Track if transition was already triggered
+    var transitionTriggered = false;
+    var fallbackTimeout = null;
+    
+    // Play video with proper error handling
+    var playPromise = ui.doorTransitionVideo.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.then(function() {
+        console.log('✅ Door video started playing successfully');
+      }).catch(function(error) {
+        console.error('❌ Door video play failed:', error);
+        // If video fails to play, just transition after a delay
+        if (!transitionTriggered) {
+          transitionTriggered = true;
+          setTimeout(function() {
+            console.log('Transitioning without video due to play failure');
+            ui.doorTransitionOverlay.classList.add('hidden');
+            transitionToNextRoom();
+          }, 2000);
+        }
+      });
+    }
+    
+    // When video ends, transition to next room
+    ui.doorTransitionVideo.onended = function() {
+      console.log('Door video complete, transitioning...');
+      
+      // Only transition if not already triggered
+      if (!transitionTriggered) {
+        transitionTriggered = true;
+        
+        // Clear the fallback timeout
+        if (fallbackTimeout) {
+          clearTimeout(fallbackTimeout);
+        }
+        
+        // Hide the overlay
+        ui.doorTransitionOverlay.classList.add('hidden');
+        
+        // Transition to next room
+        transitionToNextRoom();
+      }
+    };
+    
+    // Fallback: If video doesn't end within 10 seconds, force transition
+    fallbackTimeout = setTimeout(function() {
+      if (!transitionTriggered && !ui.doorTransitionOverlay.classList.contains('hidden')) {
+        console.log('⚠️ Door video timeout, forcing transition');
+        transitionTriggered = true;
+        ui.doorTransitionOverlay.classList.add('hidden');
+        transitionToNextRoom();
+      }
+    }, 10000);
+  } else {
+    // Fallback if video elements not found - just transition directly
+    console.log('Door video not found, transitioning directly...');
+    setTimeout(function() {
+      transitionToNextRoom();
+    }, 1500);
+  }
+}
+
+function transitionToNextRoom() {
+  console.log('transitionToNextRoom called');
+  console.log('Current room before increment:', currentRoom);
+  console.log('Room score:', roomScores[currentRoom]);
+  console.log('isTransitioning flag:', isTransitioning);
+  
+  // Double-check we're not already in the middle of a transition
+  if (!isTransitioning) {
+    console.log('⚠️ transitionToNextRoom called but isTransitioning is false - aborting');
+    return;
+  }
+  
+  // Fade out effect
+  if (ui.clueBar) {
+    ui.clueBar.classList.add('fade-out');
+  }
+  
+  // Create fade overlay
+  var fadeOverlay = document.createElement('div');
+  fadeOverlay.style.position = 'fixed';
+  fadeOverlay.style.top = '0';
+  fadeOverlay.style.left = '0';
+  fadeOverlay.style.width = '100vw';
+  fadeOverlay.style.height = '100vh';
+  fadeOverlay.style.backgroundColor = '#000';
+  fadeOverlay.style.opacity = '0';
+  fadeOverlay.style.transition = 'opacity 1s ease-in-out';
+  fadeOverlay.style.zIndex = '5000';
+  fadeOverlay.style.pointerEvents = 'none';
+  document.body.appendChild(fadeOverlay);
+  
+  console.log('Fade overlay created');
+  
+  // Fade to black
+  setTimeout(function() {
+    fadeOverlay.style.opacity = '1';
+    console.log('Fading to black...');
+  }, 50);
+  
+  // Load next room
+  setTimeout(function() {
+    var nextRoomIndex = currentRoom + 1;
+    console.log('====== TRANSITION: Calculating next room ======');
+    console.log('Current room index:', currentRoom);
+    console.log('Next room index will be:', nextRoomIndex);
+    console.log('Room names: current="' + rooms[currentRoom].name + '", next="' + rooms[nextRoomIndex].name + '"');
+    
+    // DO NOT update currentRoom here - let loadRoom do it
+    // This prevents double increment issues
+    
+    // Unlock the next room
+    if (nextRoomIndex >= roomsUnlocked) {
+      roomsUnlocked = nextRoomIndex + 1;
+      localStorage.setItem('roomsUnlocked', roomsUnlocked);
+      console.log('🔓 Unlocked room:', nextRoomIndex, '- Saved to storage');
+    }
+    
+    console.log('Calling loadRoom with index:', nextRoomIndex);
+    loadRoom(nextRoomIndex);
+    
+    // Fade back in
+    setTimeout(function() {
+      fadeOverlay.style.opacity = '0';
+      console.log('Fading back in...');
+      setTimeout(function() {
+        document.body.removeChild(fadeOverlay);
+        isTransitioning = false;
+        console.log('Transition complete! Now in room:', currentRoom);
+      }, 1000);
+    }, 500);
+  }, 1500);
+}
+
+function showRoomTransition(roomName) {
+  // Create room name overlay
+  var roomOverlay = document.createElement('div');
+  roomOverlay.style.position = 'fixed';
+  roomOverlay.style.top = '50%';
+  roomOverlay.style.left = '50%';
+  roomOverlay.style.transform = 'translate(-50%, -50%)';
+  roomOverlay.style.color = '#ff5555';
+  roomOverlay.style.fontSize = '36px';
+  roomOverlay.style.fontFamily = 'Georgia, serif';
+  roomOverlay.style.textShadow = '0 0 20px rgba(255,0,0,0.8)';
+  roomOverlay.style.zIndex = '6000';
+  roomOverlay.style.opacity = '0';
+  roomOverlay.style.transition = 'opacity 0.5s ease-in-out';
+  roomOverlay.style.pointerEvents = 'none';
+  roomOverlay.textContent = roomName;
+  document.body.appendChild(roomOverlay);
+  
+  // Fade in
+  setTimeout(function() {
+    roomOverlay.style.opacity = '1';
+  }, 50);
+  
+  // Fade out
+  setTimeout(function() {
+    roomOverlay.style.opacity = '0';
+    setTimeout(function() {
+      document.body.removeChild(roomOverlay);
+    }, 500);
+  }, 1500);
+  
+  // Update room progress indicator
+  updateRoomProgress();
+}
+
+function updateRoomProgress() {
+  if (!ui.roomProgress) return;
+  
+  ui.roomProgress.innerHTML = '';
+  
+  for (var i = 0; i < rooms.length; i++) {
+    var dot = document.createElement('span');
+    dot.className = 'room-progress-dot';
+    
+    if (i < currentRoom) {
+      dot.classList.add('completed');
+    } else if (i === currentRoom) {
+      dot.classList.add('current');
+    }
+    
+    ui.roomProgress.appendChild(dot);
   }
 }

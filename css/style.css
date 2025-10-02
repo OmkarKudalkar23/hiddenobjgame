@@ -363,3 +363,163 @@ button {
     height: 44px;
   }
 }
+
+/* Room Transition Animations */
+.room-transition-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  z-index: 5000;
+  pointer-events: none;
+  animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.room-name-display {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ff5555;
+  font-size: 42px;
+  font-family: 'Georgia', serif;
+  text-shadow: 0 0 20px rgba(255,0,0,0.8), 0 0 40px rgba(255,0,0,0.5);
+  z-index: 6000;
+  pointer-events: none;
+  animation: roomNameAppear 2s ease-in-out;
+  text-align: center;
+  padding: 0 20px;
+}
+
+@keyframes roomNameAppear {
+  0% { 
+    opacity: 0; 
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  30% { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  70% { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% { 
+    opacity: 0; 
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+
+/* Door glow effect */
+.door-glow {
+  box-shadow: 0 0 30px rgba(255, 200, 0, 0.6), 
+              0 0 60px rgba(255, 150, 0, 0.4),
+              0 0 90px rgba(255, 100, 0, 0.2);
+  animation: doorPulse 2s ease-in-out infinite;
+}
+
+@keyframes doorPulse {
+  0%, 100% { 
+    filter: brightness(1);
+  }
+  50% { 
+    filter: brightness(1.3);
+  }
+}
+
+/* Door Transition Overlay */
+.door-transition-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.door-transition-overlay.hidden {
+  display: none;
+}
+
+.door-transition-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Victory screen enhancements */
+.victory-message {
+  animation: victoryAppear 1s ease-out;
+}
+
+@keyframes victoryAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-5deg);
+  }
+  60% {
+    transform: scale(1.1) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Progress indicator for rooms */
+.room-progress {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #aaa;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 14px;
+  background: rgba(0,0,0,0.6);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.2);
+  pointer-events: none;
+}
+
+.room-progress-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #444;
+  margin: 0 4px;
+  transition: all 0.3s ease;
+}
+
+.room-progress-dot.completed {
+  background: #4CAF50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.6);
+}
+
+.room-progress-dot.current {
+  background: #ff9800;
+  box-shadow: 0 0 10px rgba(255, 152, 0, 0.8);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+}

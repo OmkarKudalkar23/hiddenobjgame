@@ -77,6 +77,34 @@
                 <span class="button-text">Enter the Shadows</span>
                 <span class="button-subtitle">Begin Your Hunt</span>
             </button>
+            
+            <div class="room-selection">
+                <h3 style="color: #ff9800; margin: 20px 0 10px 0; font-size: 18px;">Or Select a Specific Room:</h3>
+                <div class="room-buttons">
+                    <button class="room-btn" data-room="0">
+                        <span class="room-number">1</span>
+                        <span class="room-name">The Entrance Hall</span>
+                    </button>
+                    <button class="room-btn" data-room="1">
+                        <span class="room-number">2</span>
+                        <span class="room-name">The Living Room</span>
+                    </button>
+                    <button class="room-btn" data-room="2">
+                        <span class="room-number">3</span>
+                        <span class="room-name">The Study</span>
+                    </button>
+                    <button class="room-btn" data-room="3">
+                        <span class="room-number">4</span>
+                        <span class="room-name">The Attic</span>
+                    </button>
+                    <button class="room-btn" data-room="4">
+                        <span class="room-number">5</span>
+                        <span class="room-name">The Final Chamber</span>
+                    </button>
+                </div>
+            </div>
+            
+            <button id="resetProgressBtn" style="margin-top: 15px; padding: 8px 16px; background: rgba(255,0,0,0.2); border: 1px solid #ff4444; color: #ff4444; border-radius: 4px; cursor: pointer; font-size: 12px;">Reset Progress</button>
             <p class="warning">⚠️ Best experienced with headphones for full atmospheric immersion</p>
         </div>
     </div>
@@ -89,6 +117,41 @@
             setTimeout(function() {
                 window.location.href = 'index.html';
             }, 500);
+        });
+
+        // Room selection buttons
+        // Check localStorage for unlocked rooms
+        var roomsUnlocked = parseInt(localStorage.getItem('roomsUnlocked') || '1');
+        
+        document.querySelectorAll('.room-btn').forEach(function(btn, index) {
+            var roomIndex = parseInt(btn.getAttribute('data-room'));
+            
+            // Disable locked rooms
+            if (roomIndex >= roomsUnlocked) {
+                btn.disabled = true;
+                btn.style.opacity = '0.4';
+                btn.style.cursor = 'not-allowed';
+                btn.style.borderColor = '#666';
+                btn.innerHTML += '<div style="font-size: 12px; color: #ff4444; margin-top: 5px;">🔒 Locked</div>';
+            } else {
+                btn.addEventListener('click', function() {
+                    var roomIndex = this.getAttribute('data-room');
+                    document.body.style.transition = 'opacity 0.5s ease-out';
+                    document.body.style.opacity = '0';
+                    setTimeout(function() {
+                        window.location.href = 'index.html?room=' + roomIndex;
+                    }, 500);
+                });
+            }
+        });
+
+        // Reset progress button
+        document.getElementById('resetProgressBtn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to reset all progress? This will lock all rooms except the first one.')) {
+                localStorage.setItem('roomsUnlocked', '1');
+                alert('Progress reset! Refreshing page...');
+                location.reload();
+            }
         });
 
         // Add some atmospheric effects

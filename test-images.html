@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        img { max-width: 300px; margin: 10px; border: 2px solid #ccc; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Background Image Test</h1>
+    <p>Testing if background images are accessible...</p>
+    
+    <div>
+        <h3>Room 1 - assets/bg.jpg</h3>
+        <img src="assets/bg.jpg" alt="Room 1 Background" onload="showSuccess(this)" onerror="showError(this)">
+    </div>
+    
+    <div>
+        <h3>Room 2 - assets/bg2.jpg</h3>
+        <img src="assets/bg2.jpg" alt="Room 2 Background" onload="showSuccess(this)" onerror="showError(this)">
+    </div>
+    
+    <div>
+        <h3>Room 3 - assets/bg3.jpg</h3>
+        <img src="assets/bg3.jpg" alt="Room 3 Background" onload="showSuccess(this)" onerror="showError(this)">
+    </div>
+    
+    <div>
+        <h3>Room 4 - assets/bg4.jpg</h3>
+        <img src="assets/bg4.jpg" alt="Room 4 Background" onload="showSuccess(this)" onerror="showError(this)">
+    </div>
+    
+    <div>
+        <h3>Room 5 - assets/items/bg.png</h3>
+        <img src="assets/items/bg.png" alt="Room 5 Background" onload="showSuccess(this)" onerror="showError(this)">
+    </div>
+
+    <script>
+        function showSuccess(img) {
+            const div = img.parentElement;
+            const status = div.querySelector('.status') || document.createElement('p');
+            status.className = 'status success';
+            status.textContent = '✅ Image loaded successfully';
+            if (!div.querySelector('.status')) {
+                div.appendChild(status);
+            }
+        }
+        
+        function showError(img) {
+            const div = img.parentElement;
+            const status = div.querySelector('.status') || document.createElement('p');
+            status.className = 'status error';
+            status.textContent = '❌ Failed to load image';
+            if (!div.querySelector('.status')) {
+                div.appendChild(status);
+            }
+        }
+    </script>
+</body>
+</html>

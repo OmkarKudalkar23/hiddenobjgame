@@ -11,6 +11,7 @@ body {
     line-height: 1.6;
     min-height: 100vh;
     overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .landing-container {
@@ -249,6 +250,54 @@ body {
     }
 }
 
+/* Room Selection */
+.room-selection {
+    margin: 30px 0;
+    text-align: center;
+}
+
+.room-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.room-btn {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border: 2px solid #ff9800;
+    color: #e5e5e5;
+    padding: 15px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-width: 180px;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.2);
+}
+
+.room-btn:hover {
+    background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+    border-color: #ffc107;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+}
+
+.room-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff9800;
+}
+
+.room-name {
+    font-size: 14px;
+    color: #ccc;
+}
+
 @media (max-width: 480px) {
     .game-title {
         font-size: 2rem;
@@ -257,5 +306,18 @@ body {
     .start-button {
         padding: 15px 30px;
         font-size: 1rem;
+    }
+    
+    .room-btn {
+        min-width: 140px;
+        padding: 12px 15px;
+    }
+    
+    .room-number {
+        font-size: 20px;
+    }
+    
+    .room-name {
+        font-size: 12px;
     }
 }
