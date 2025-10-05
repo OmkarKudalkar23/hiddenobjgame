@@ -56,7 +56,12 @@ var isUserInteracting = false,
   // Jumpscare
   jumpscareTimer = null,
   jumpscareTriggered = false,
-  gameStartTime = null;
+  gameStartTime = null,
+  // Room Timer
+  roomTimer = null,
+  roomTimeLimit = 300000, // 5 minutes in milliseconds
+  roomStartTime = null,
+  roomTimeRemaining = 0;
 
 console.log('🔧 Starting game initialization...');
 console.log('THREE.js available:', typeof THREE !== 'undefined');
@@ -204,6 +209,7 @@ function init() {
   ui.roomProgress = document.getElementById('roomProgress');
   ui.doorTransitionOverlay = document.getElementById('doorTransitionOverlay');
   ui.doorTransitionVideo = document.getElementById('doorTransitionVideo');
+  ui.timerDisplay = document.getElementById('timerDisplay');
   
   if (ui.restartBtn) {
     ui.restartBtn.addEventListener('click', function () {
@@ -482,6 +488,9 @@ function setupGame() {
   
   // Start jumpscare timer (1 minute)
   startJumpscareTimer();
+  
+  // Start room timer (5 minutes)
+  startRoomTimer();
 }
 
 function currentTargetName() {
@@ -517,6 +526,9 @@ function nextClue() {
       // More rooms to go - show door animation
       console.log('Showing door animation for next room');
       
+      // Stop room timer
+      stopRoomTimer();
+      
       // Show completion message
       if (ui.clueBar) {
         ui.clueBar.textContent = 'Room Complete! Moving to next room...';
@@ -529,6 +541,7 @@ function nextClue() {
     } else {
       // Final room complete - end game
       console.log('Final room complete - ending game');
+      stopRoomTimer();
       endGame();
     }
     return;
@@ -650,6 +663,12 @@ function restartGame() {
     clearTimeout(jumpscareTimer);
   }
   startJumpscareTimer();
+  
+  // Reset room timer
+  if (roomTimer) {
+    clearInterval(roomTimer);
+  }
+  startRoomTimer();
 }
 
 function handleSelection() {
@@ -662,7 +681,7 @@ function handleSelection() {
 
   if (!hitObj || !hitObj.visible) {
     // Empty space or already found
-    updateScore(-5);
+    updateScore(-2);
     return;
   }
 
@@ -670,7 +689,7 @@ function handleSelection() {
   if (hitObj.name === expected) {
     // Start the smooth animation sequence
     animateCorrectObject(hitObj);
-    updateScore(+10);
+    updateScore(+5);
     if (ui.clueBar) {
       ui.clueBar.classList.remove('fade-in');
       ui.clueBar.classList.add('fade-out');
@@ -679,7 +698,7 @@ function handleSelection() {
       setTimeout(function(){ nextClue(); }, 2200);
     }
   } else {
-    updateScore(-5);
+    updateScore(-2);
   }
 }
 
@@ -971,6 +990,91 @@ function hideJumpscare() {
   }
 }
 
+// ===== Room Timer System =====
+function startRoomTimer() {
+  roomStartTime = Date.now();
+  roomTimeRemaining = roomTimeLimit;
+  
+  // Clear any existing timer
+  if (roomTimer) {
+    clearInterval(roomTimer);
+  }
+  
+  // Update timer every second
+  roomTimer = setInterval(function() {
+    var elapsed = Date.now() - roomStartTime;
+    roomTimeRemaining = roomTimeLimit - elapsed;
+    
+    if (roomTimeRemaining <= 0) {
+      // Time's up!
+      clearInterval(roomTimer);
+      handleRoomTimeout();
+    } else {
+      updateTimerDisplay();
+    }
+  }, 100); // Update every 100ms for smooth countdown
+  
+  // Initial display update
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  if (!ui.timerDisplay) return;
+  
+  var secondsRemaining = Math.max(0, Math.ceil(roomTimeRemaining / 1000));
+  var minutes = Math.floor(secondsRemaining / 60);
+  var seconds = secondsRemaining % 60;
+  
+  // Format as MM:SS
+  var timeString = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+  ui.timerDisplay.textContent = timeString;
+  
+  // Change color when time is running out
+  if (secondsRemaining <= 30) {
+    ui.timerDisplay.style.color = '#ff4444';
+    ui.timerDisplay.style.animation = 'pulse 1s infinite';
+  } else if (secondsRemaining <= 60) {
+    ui.timerDisplay.style.color = '#ff9800';
+    ui.timerDisplay.style.animation = 'none';
+  } else {
+    ui.timerDisplay.style.color = '#4CAF50';
+    ui.timerDisplay.style.animation = 'none';
+  }
+}
+
+function stopRoomTimer() {
+  if (roomTimer) {
+    clearInterval(roomTimer);
+    roomTimer = null;
+  }
+}
+
+function handleRoomTimeout() {
+  console.log('⏱️ Room timer expired!');
+  
+  // Stop the timer
+  stopRoomTimer();
+  
+  // Show timeout message
+  if (ui.clueBar) {
+    ui.clueBar.textContent = 'Time\'s up! Moving to the next room...';
+    ui.clueBar.classList.add('fade-in');
+  }
+  
+  // Check if there are more rooms
+  if (currentRoom < rooms.length - 1) {
+    // Move to next room after delay
+    setTimeout(function() {
+      showDoorAnimation();
+    }, 2000);
+  } else {
+    // Last room - end the game
+    setTimeout(function() {
+      endGame();
+    }, 2000);
+  }
+}
+
 // ===== Multi-Room System =====
 function loadRoom(roomIndex) {
   console.log('====== loadRoom called ======');
@@ -989,6 +1093,9 @@ function loadRoom(roomIndex) {
   console.log('Setting currentRoom from', currentRoom, 'to', roomIndex);
   currentRoom = roomIndex;
   console.log('✅ Loading room:', room.name, '(index:', currentRoom, ')');
+  
+  // Stop any existing room timer
+  stopRoomTimer();
   
   // Update background with simplified approach
   var backgroundMesh = scene.getObjectByName('backGround');
@@ -1113,6 +1220,8 @@ function loadRoom(roomIndex) {
   
   setTimeout(function() {
     showClue(currentTargetName());
+    // Start room timer after room is fully loaded
+    startRoomTimer();
   }, 2000);
 }
 
