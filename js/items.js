@@ -67,18 +67,85 @@
   scene.add(oil_lamp);
 
 
-  var img_horse = new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load('assets/items/horse.png'),
+  var img_cross = new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load('assets/items/cross.jpg'),
     transparent: true,
     side: THREE.DoubleSide
   });
-  img_horse.map.minFilter = THREE.LinearFilter;
-  var horse = new THREE.Mesh(new THREE.PlaneGeometry(309, 247), img_horse);
-  horse.name = 'Horse';
-  horse.scale.set(0.5, 0.5, 0.6);
-  horse.position.set(-180, -180, 80);
-  horse.rotation.set(-0.2, 1.9, 0.35);
-  scene.add(horse);
+  img_cross.map.minFilter = THREE.LinearFilter;
+  var cross = new THREE.Mesh(new THREE.PlaneGeometry(80, 120), img_cross);
+  cross.name = 'Cross';
+  cross.scale.set(0.4, 0.4, 0.4);
+  cross.position.set(-300, -90, 300);
+  cross.rotation.set(0.1, -7.5, 0.45);
+  scene.add(cross);
+
+
+  var img_bulb1_a = new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load('assets/items/bulb1.png'),
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  img_bulb1_a.map.minFilter = THREE.LinearFilter;
+  var bulb1_a = new THREE.Mesh(new THREE.PlaneGeometry(60, 80), img_bulb1_a);
+  bulb1_a.name = 'Bulb1';
+  bulb1_a.scale.set(0.35, 0.35, 0.35);
+  bulb1_a.position.set(140, -110, 140);
+  bulb1_a.rotation.set(1.0, 1.5, -0.8);
+  scene.add(bulb1_a);
+
+  var img_bulb1_b = new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load('assets/items/bulb1.png'),
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  img_bulb1_b.map.minFilter = THREE.LinearFilter;
+  var bulb1_b = new THREE.Mesh(new THREE.PlaneGeometry(60, 80), img_bulb1_b);
+  bulb1_b.name = 'Bulb1';
+  bulb1_b.scale.set(0.3, 0.3, 0.3);
+  bulb1_b.position.set(-140, 10, 240);
+  bulb1_b.rotation.set(0.1, -2.8, -0.1);
+  scene.add(bulb1_b);
+
+  var img_bulb2_a = new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load('assets/items/bulb2.png'),
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  img_bulb2_a.map.minFilter = THREE.LinearFilter;
+  var bulb2_a = new THREE.Mesh(new THREE.PlaneGeometry(60, 80), img_bulb2_a);
+  bulb2_a.name = 'Bulb2';
+  bulb2_a.scale.set(0.35, 0.35, 0.35);
+  bulb2_a.position.set(80, -150, 110);
+  bulb2_a.rotation.set(1.2, 1.3, -1.0);
+  scene.add(bulb2_a);
+
+  var img_bulb2_b = new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load('assets/items/bulb2.png'),
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  img_bulb2_b.map.minFilter = THREE.LinearFilter;
+  var bulb2_b = new THREE.Mesh(new THREE.PlaneGeometry(60, 80), img_bulb2_b);
+  bulb2_b.name = 'Bulb2';
+  bulb2_b.scale.set(0.3, 0.3, 0.3);
+  bulb2_b.position.set(-200, -20, 220);
+  bulb2_b.rotation.set(0.2, -3.1, 0.0);
+  scene.add(bulb2_b);
+
+
+  var img_wig = new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load('assets/items/WIG.png'),
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  img_wig.map.minFilter = THREE.LinearFilter;
+  var wig = new THREE.Mesh(new THREE.PlaneGeometry(120, 100), img_wig);
+  wig.name = 'Wig';
+  wig.scale.set(0.5, 0.5, 0.6);
+  wig.position.set(-180, -180, 80);
+  wig.rotation.set(-0.2, 1.9, 0.35);
+  scene.add(wig);
 
 
   var img_spider_web = new THREE.MeshBasicMaterial({
@@ -187,62 +254,62 @@
   scene.add(lamp);
 
 
-  var img_teddy = new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load('assets/items/teddy.png'),
+  var img_specs = new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load('assets/items/brokenspecs.png'),
     transparent: true,
     side: THREE.DoubleSide
   });
-  img_teddy.map.minFilter = THREE.LinearFilter;
-  var teddy = new THREE.Mesh(new THREE.PlaneGeometry(115, 118), img_teddy);
-  teddy.name = 'Teddy';
-  teddy.position.x = 420;
-  teddy.position.y = -225;
-  teddy.position.z = -200;
-  teddy.rotation.y = -0.7;
-  scene.add(teddy);
+  img_specs.map.minFilter = THREE.LinearFilter;
+  var specs = new THREE.Mesh(new THREE.PlaneGeometry(115, 118), img_specs);
+  specs.name = 'Specs';
+  specs.position.x = 420;
+  specs.position.y = -225;
+  specs.position.z = -200;
+  specs.rotation.y = -0.7;
+  scene.add(specs);
 
 
-  var img_bat = new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load('assets/items/bat.png'),
+  var img_key = new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load('assets/items/key.png'),
     transparent: true,
     side: THREE.DoubleSide
   });
-  img_bat.map.minFilter = THREE.LinearFilter;
-  var bat = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), img_bat);
-  bat.name = 'Bat';
-  bat.position.x = 110;
-  bat.position.y = 100;
-  bat.position.z = -190;
-  scene.add(bat);
+  img_key.map.minFilter = THREE.LinearFilter;
+  var key = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), img_key);
+  key.name = 'Key';
+  key.position.x = 110;
+  key.position.y = 100;
+  key.position.z = -190;
+  scene.add(key);
 
 
-  var img_ball = new THREE.MeshBasicMaterial({
+  var img_hour_glass = new THREE.MeshBasicMaterial({
     map: new THREE.TextureLoader().load('assets/items/ball.png'),
     transparent: true,
     side: THREE.DoubleSide
   });
-  img_ball.map.minFilter = THREE.LinearFilter;
-  var ball = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), img_ball);
-  ball.name = 'Ball';
-  ball.position.x = -150;
-  ball.position.y = -120;
-  ball.position.z = -190;
-  ball.rotation.x = 0.3;
-  ball.rotation.y = 0.7;
-  scene.add(ball);
+  img_hour_glass.map.minFilter = THREE.LinearFilter;
+  var hour_glass = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), img_hour_glass);
+  hour_glass.name = 'Hour Glass';
+  hour_glass.position.x = -150;
+  hour_glass.position.y = -120;
+  hour_glass.position.z = -190;
+  hour_glass.rotation.x = 0.3;
+  hour_glass.rotation.y = 0.7;
+  scene.add(hour_glass);
 
 
-  var img_poster = new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load('assets/items/poster.png'),
+  var img_haunted_painting = new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load('assets/items/painting.jpg'),
     transparent: true
   });
-  img_poster.map.minFilter = THREE.LinearFilter;
-  var poster = new THREE.Mesh(new THREE.PlaneGeometry(461, 345), img_poster);
-  poster.name = 'Poster';
-  poster.scale.set(0.1, 0.1, 0.1);
-  poster.position.set(-90, -3, -190);
-  poster.rotation.set(0, -0.5, -0.01);
-  scene.add(poster);
+  img_haunted_painting.map.minFilter = THREE.LinearFilter;
+  var haunted_painting = new THREE.Mesh(new THREE.PlaneGeometry(461, 345), img_haunted_painting);
+  haunted_painting.name = 'Haunted Painting';
+  haunted_painting.scale.set(0.1, 0.1, 0.1);
+  haunted_painting.position.set(-90, -3, -190);
+  haunted_painting.rotation.set(0, -0.5, -0.01);
+  scene.add(haunted_painting);
 
 
   var img_clock_old = new THREE.MeshBasicMaterial({

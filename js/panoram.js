@@ -138,6 +138,9 @@ function init() {
   );
 
   raycaster = new THREE.Raycaster();
+  // Increase the threshold for easier clicking on objects
+  raycaster.params.Points.threshold = 50;
+  raycaster.params.Line.threshold = 50;
 
   renderer = new THREE.WebGLRenderer();
   console.log('✅ WebGL Renderer created');
@@ -291,10 +294,22 @@ function onDocumentTouchMove(event) {
 
 function onDocumentTouchEnd(event) {
   if (!isDragging) {
-    // This was a tap, not a drag - handle selection
-    mouse.x = (onPointerDownPointerX / window.innerWidth) * 2 - 1;
-    mouse.y = -(onPointerDownPointerY / window.innerHeight) * 2 + 1;
-    handleSelection();
+    // Check if touch was on UI elements (buttons, overlays, etc.)
+    var target = event.target;
+    var isUIElement = target.tagName === 'BUTTON' || 
+                     target.closest('button') || 
+                     target.closest('.ui-element') ||
+                     target.closest('#muteBtn') ||
+                     target.closest('#restartBtn') ||
+                     target.closest('#backToMenuBtn') ||
+                     target.closest('#backToMenuFromEndBtn');
+    
+    if (!isUIElement) {
+      // This was a tap on the game area, not a UI element - handle selection
+      mouse.x = (onPointerDownPointerX / window.innerWidth) * 2 - 1;
+      mouse.y = -(onPointerDownPointerY / window.innerHeight) * 2 + 1;
+      handleSelection();
+    }
   }
   isDragging = false;
 }
@@ -317,10 +332,22 @@ function onDocumentMouseMove(event) {
 
 function onDocumentMouseUp(event) {
   if (isUserInteracting && !isDragging) {
-    // This was a click, not a drag - handle selection
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    handleSelection();
+    // Check if click was on UI elements (buttons, overlays, etc.)
+    var target = event.target;
+    var isUIElement = target.tagName === 'BUTTON' || 
+                     target.closest('button') || 
+                     target.closest('.ui-element') ||
+                     target.closest('#muteBtn') ||
+                     target.closest('#restartBtn') ||
+                     target.closest('#backToMenuBtn') ||
+                     target.closest('#backToMenuFromEndBtn');
+    
+    if (!isUIElement) {
+      // This was a click on the game area, not a UI element - handle selection
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      handleSelection();
+    }
   }
   isUserInteracting = false;
   isDragging = false;
@@ -378,59 +405,61 @@ function setupGame() {
     {
       name: 'The Entrance Hall',
       background: 'assets/bg.jpg',
-      objects: ['Candlestick', 'Vase', 'Rake', 'Telepfone', 'Oil Lamp'],
+      objects: ['Cross', 'Candlestick', 'Oil Lamp'], // Real objects that give points
+      fakeObjects: ['Vase', 'Rake', 'Telepfone', 'Old frame', 'Bulb1', 'Bulb2'], // Fake objects that are visible but don't give points
       doorPosition: { x: 0, y: -50, z: -250 },
       doorRotation: { x: 0, y: 0, z: 0 }
     },
     {
       name: 'The Living Room',
-      background: 'assets/bg2.jpg',
-      objects: ['Horse', 'Spider', 'Group', 'Teapot', 'Wood'],
+      background: 'assets/bg8.jpg',
+      objects: ['Spider', 'Wig'], // Real objects that give points
+      fakeObjects: ['Group', 'Teapot', 'Wood'], // Fake objects that are visible but don't give points
       doorPosition: { x: 200, y: -80, z: -200 },
       doorRotation: { x: 0, y: -0.5, z: 0 }
     },
     {
       name: 'The Study',
-      background: 'assets/bg3.jpg',
-      objects: ['Clock', 'Bucket', 'Book', 'Lamp', 'Teddy'],
+      background: 'assets/bg9.jpg',
+      objects: ['Clock', 'Lamp', 'Specs'], // Real objects that give points
+      fakeObjects: ['Bucket', 'Book'], // Fake objects that are visible but don't give points
       doorPosition: { x: -150, y: -60, z: -220 },
       doorRotation: { x: 0, y: 0.3, z: 0 }
     },
     {
       name: 'The Attic',
       background: 'assets/bg4.jpg',
-      objects: ['Bat', 'Ball', 'Poster', 'Old clock', 'Old frame'],
-      doorPosition: { x: 100, y: 0, z: -230 },
-      doorRotation: { x: 0, y: -0.2, z: 0 }
-    },
-    {
-      name: 'The Final Chamber',
-      background: 'assets/items/bg.png',
-      objects: ['Frame', 'Cup', 'Lock'],
+      objects: ['Key', 'Hour Glass', 'Haunted Painting'], // Real objects that give points
+      fakeObjects: ['Old clock', 'Old frame'], // Fake objects that are visible but don't give points
       doorPosition: null, // No door in final room
       doorRotation: null
     }
   ];
 
   clueMap = {
-    'Candlestick': 'Wax tears frozen in brass, I’ve watched long nights burn away.',
+    'Candlestick': 'I shrink as I stand, yet I never move,I weep without sorrow, yet my tears improve.Shadows flee when I whisper my light,What am I, that burns but has no fight',
     'Vase': 'Hollow throat of clay, once sipped the scent of dead flowers.',
     'Rake': 'Iron fingers by the hearth, forever combing ashes for bones.',
     'Telepfone': 'A distant voice entombed in wires, ringing after the caller is gone.',
-    'Oil Lamp': 'Glass belly and metal spine, I drink oil to birth a timid flame.',
+    'Oil Lamp': 'Once I guided souls through night,Now I whisper without light',
+    'Cross': 'Worn on necks or on walls I\'m seen, What am I that protects from the unseen?',
+    'Bulb1': 'Glass vessel of forgotten light, once bright now dim in endless night.',
+    'Bulb2': 'Hollow sphere that held the glow, now dark where light used to flow.',
     'Horse': 'Silent steed of wood, gallops only in memories.',
     'Spider': 'Threads of silence spun thin, a widow’s veil in the corner.',
     'Group': 'Faces gather but never speak, captured mid-whisper.',
     'Teapot': 'Porcelain throat pours warmth, now cold as the grave.',
     'Wood': 'Splinters of yesterday’s forest, sleeping by the fire’s ghost.',
-    'Clock': 'I count the heartbeats of walls, yet my hands seldom move.',
+    'Wig' : 'If shabby they are called jhaadu(broom),most of us know it as Kala Jaadu(Black Magic)',
+    'Clock': 'I’ve seen them live, I’ve seen them die. My hands still move, though none can hear,Seek me where the ghosts appear',
     'Bucket': 'A mouth with a metal grin, thirsty for the well’s secrets.',
     'Book': 'Leather skin and paper bones, whispering learned curses.',
     'Lamp': 'A blind eye on the ceiling, once blinking with light.',
-    'Teddy': 'A child’s guardian, stitched with forgotten lullabies.',
-    'Bat': 'Night’s folded dagger, hanging from dark rafters.',
-    'Ball': 'Round as a moon, chased by footsteps that no longer echo.',
-    'Poster': 'A paper window to elsewhere, stained by time’s breath.',
+    'Specs': ' Potter stole something from Gandhi, guess what?',
+
+    'Key': 'I became useless when Alohomora entered the castle',
+    'Hour Glass': 'time is ticking go find soon once upside down its game over for you',
+    'Haunted Painting': 'I hang where silence tends to creep,Eyes that watch while others sleep.',
     'Old clock': 'An elder of ticking halls, hoarding minutes like gold.',
     'Old frame': 'A wooden ring for ghosts, holding what is missing.',
     'Frame': 'Gilded teeth bite the wall, refusing to let go of memories.',
@@ -673,11 +702,33 @@ function restartGame() {
 
 function handleSelection() {
   if (!gameInitialized || isTransitioning) return;
-  // Compute intersections ignoring background and door
-  var intersects = raycaster.intersectObjects(scene.children, true).filter(function (hit) { 
-    return hit.object && hit.object.name !== 'backGround' && hit.object.name !== 'door'; 
-  });
-  var hitObj = intersects.length > 0 ? intersects[0].object : null;
+  
+  // Increase clickable area by checking multiple points around the click
+  var hitObj = null;
+  var clickRadius = 0.05; // Increase this for larger clickable area
+  var offsets = [
+    {x: 0, y: 0},           // Center
+    {x: clickRadius, y: 0}, // Right
+    {x: -clickRadius, y: 0},// Left
+    {x: 0, y: clickRadius}, // Top
+    {x: 0, y: -clickRadius},// Bottom
+    {x: clickRadius, y: clickRadius},   // Top-right
+    {x: -clickRadius, y: clickRadius},  // Top-left
+    {x: clickRadius, y: -clickRadius},  // Bottom-right
+    {x: -clickRadius, y: -clickRadius}  // Bottom-left
+  ];
+  
+  // Try each offset point to find an object
+  for (var i = 0; i < offsets.length && !hitObj; i++) {
+    var testMouse = new THREE.Vector2(mouse.x + offsets[i].x, mouse.y + offsets[i].y);
+    raycaster.setFromCamera(testMouse, camera);
+    var intersects = raycaster.intersectObjects(scene.children, true).filter(function (hit) { 
+      return hit.object && hit.object.name !== 'backGround' && hit.object.name !== 'door'; 
+    });
+    if (intersects.length > 0) {
+      hitObj = intersects[0].object;
+    }
+  }
 
   if (!hitObj || !hitObj.visible) {
     // Empty space or already found
@@ -686,8 +737,11 @@ function handleSelection() {
   }
 
   var expected = currentTargetName();
+  var currentRoomData = rooms[currentRoom] || {};
+  var isFakeObject = currentRoomData.fakeObjects && currentRoomData.fakeObjects.includes(hitObj.name);
+  
   if (hitObj.name === expected) {
-    // Start the smooth animation sequence
+    // Correct object found
     animateCorrectObject(hitObj);
     updateScore(+5);
     if (ui.clueBar) {
@@ -697,7 +751,19 @@ function handleSelection() {
     } else {
       setTimeout(function(){ nextClue(); }, 2200);
     }
+  } else if (isFakeObject) {
+    // Fake object clicked - give penalty but show message
+    updateScore(-2);
+    if (ui.clueBar) {
+      var originalText = ui.clueBar.textContent;
+      ui.clueBar.textContent = 'This object is not what you seek...';
+      ui.clueBar.classList.add('fade-in');
+      setTimeout(function() {
+        ui.clueBar.textContent = originalText;
+      }, 1500);
+    }
   } else {
+    // Wrong real object or empty space
     updateScore(-2);
   }
 }
@@ -1051,6 +1117,7 @@ function stopRoomTimer() {
 
 function handleRoomTimeout() {
   console.log('⏱️ Room timer expired!');
+  console.log('Current room:', currentRoom, 'Total rooms:', rooms.length);
   
   // Stop the timer
   stopRoomTimer();
@@ -1063,12 +1130,21 @@ function handleRoomTimeout() {
   
   // Check if there are more rooms
   if (currentRoom < rooms.length - 1) {
-    // Move to next room after delay
-    setTimeout(function() {
-      showDoorAnimation();
-    }, 2000);
+    console.log('Moving to next room due to timeout. Current room:', currentRoom);
+    
+    // Set isTransitioning to prevent conflicts
+    if (!isTransitioning) {
+      // Move to next room after delay with door animation
+      setTimeout(function() {
+        console.log('Timeout: Showing door animation before transition');
+        showDoorAnimation();
+      }, 2000);
+    } else {
+      console.log('Already transitioning, skipping timeout transition');
+    }
   } else {
     // Last room - end the game
+    console.log('Last room timeout - ending game');
     setTimeout(function() {
       endGame();
     }, 2000);
@@ -1180,16 +1256,29 @@ function loadRoom(roomIndex) {
     }
   });
   
-  // Show only objects for this room
+  // Show real objects for this room
   room.objects.forEach(function(objName) {
     var obj = scene.getObjectByName(objName);
     if (obj) {
       obj.visible = true;
-      console.log('Showing object:', objName);
+      console.log('Showing real object:', objName);
     } else {
-      console.log('Object not found:', objName);
+      console.log('Real object not found:', objName);
     }
   });
+  
+  // Show fake objects for this room (if any)
+  if (room.fakeObjects) {
+    room.fakeObjects.forEach(function(objName) {
+      var obj = scene.getObjectByName(objName);
+      if (obj) {
+        obj.visible = true;
+        console.log('Showing fake object:', objName);
+      } else {
+        console.log('Fake object not found:', objName);
+      }
+    });
+  }
   
   // Remove old door if exists
   if (doorObject) {
@@ -1271,8 +1360,9 @@ function showDoorAnimation() {
     return;
   }
   
-  if (currentRoom === 0 && currentIndex === 0) {
-    console.log('⚠️ Aborting door animation - still in first room, no objects found');
+  // Allow door animation during timeout even if no objects found
+  if (currentRoom === 0 && currentIndex === 0 && roomTimeRemaining > 0) {
+    console.log('⚠️ Aborting door animation - still in first room, no objects found, and time remaining');
     return;
   }
   
