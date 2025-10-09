@@ -135,7 +135,7 @@
 
 
   var img_wig = new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load('assets/items/WIG.png'),
+    map: new THREE.TextureLoader().load('assets/items/wig.png'),
     transparent: true,
     side: THREE.DoubleSide
   });
