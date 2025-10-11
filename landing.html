@@ -4,10 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadows of Bhangarh - Hidden Object Horror Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Creepster&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/landing.css">
+    <style>
+        /* Add some creepy cursor */
+        body {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="30" viewBox="0 0 24 30"><path fill="%23ff0000" d="M12,0C5.4,0,0,5.4,0,12s5.4,12,12,12s12-5.4,12-12S18.6,0,12,0z M12,22c-5.5,0-10-4.5-10-10S6.5,2,12,2s10,4.5,10,10 S17.5,22,12,22z"/></svg>') 12 12, auto;
+        }
+        a, button, .room-btn {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="30" viewBox="0 0 24 30"><path fill="%23ff0000" d="M12,0C5.4,0,0,5.4,0,12s5.4,12,12,12s12-5.4,12-12S18.6,0,12,0z M12,22c-5.5,0-10-4.5-10-10S6.5,2,12,2s10,4.5,10,10 S17.5,22,12,22z"/><circle cx="12" cy="12" r="3" fill="%23ff0000"/></svg>') 12 12, pointer;
+        }
+        
+        /* Flicker overlay for candle effect */
+        .flicker-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.7) 100%);
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.1;
+            animation: flicker 5s infinite alternate;
+            mix-blend-mode: overlay;
+        }
+        
+        @keyframes flicker {
+            0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+                opacity: 0.1;
+                background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.7) 100%);
+            }
+            20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+                opacity: 0.2;
+                background: radial-gradient(ellipse at center, rgba(255,150,0,0.1) 0%, rgba(0,0,0,0.9) 100%);
+            }
+        }
+    </style>
 </head>
-<body>
-    <div class="landing-container">
+<body onload="createGhosts()">
+    <!-- Floating Ghosts (will be added by JavaScript) -->
+<div id="ghostContainer"></div>
+
+<!-- Flickering overlay for candle effect -->
+<div class="flicker-overlay"></div>
+
+<!-- Main content container -->
+<div class="landing-container">
         <div class="header">
             <h1 class="game-title">Shadows of Bhangarh</h1>
             <p class="subtitle">A Horror Hidden Object Experience</p>
@@ -106,6 +149,54 @@
     </div>
 
     <script>
+        // Create floating ghost elements
+        function createGhosts() {
+            const ghostContainer = document.getElementById('ghostContainer');
+            const ghostCount = 5;
+            
+            for (let i = 0; i < ghostCount; i++) {
+                const ghost = document.createElement('div');
+                ghost.className = 'ghost';
+                
+                // Random position
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100;
+                const size = 30 + Math.random() * 50;
+                const duration = 15 + Math.random() * 15;
+                const delay = Math.random() * 5;
+                
+                ghost.style.left = `${posX}%`;
+                ghost.style.top = `${posY}%`;
+                ghost.style.width = `${size}px`;
+                ghost.style.height = `${size}px`;
+                ghost.style.animationDuration = `${duration}s`;
+                ghost.style.animationDelay = `-${delay}s`;
+                ghost.style.opacity = 0.05 + Math.random() * 0.1;
+                
+                ghostContainer.appendChild(ghost);
+            }
+        }
+
+        // Add spooky hover effect to all interactive elements
+        document.querySelectorAll('button, a, .room-btn').forEach(el => {
+            el.addEventListener('mouseover', function() {
+                this.style.transform = 'scale(1.02)';
+            });
+            el.addEventListener('mouseout', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+
+        // Add spooky click effect
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' + 'A'.repeat(1000));
+                audio.volume = 0.2;
+                audio.play().catch(() => {});
+            }
+        });
+
+        // Start game button
         document.getElementById('startGameBtn').addEventListener('click', function() {
             // Fade out landing page and redirect to game
             document.body.style.transition = 'opacity 0.5s ease-out';

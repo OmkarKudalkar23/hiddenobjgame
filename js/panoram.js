@@ -57,7 +57,6 @@ var isUserInteracting = false,
   jumpscareTimer = null,
   jumpscareTriggered = false,
   gameStartTime = null,
-  // Room Timer
   roomTimer = null,
   roomTimeLimit = 300000, // 5 minutes in milliseconds
   roomStartTime = null,
@@ -66,6 +65,7 @@ var isUserInteracting = false,
 console.log('🔧 Starting game initialization...');
 console.log('THREE.js available:', typeof THREE !== 'undefined');
 console.log('VirtualJoystick available:', typeof VirtualJoystick !== 'undefined');
+console.log('DPad available:', typeof DPad !== 'undefined');
 
 try {
   init();
@@ -130,7 +130,7 @@ function init() {
       console.log('✅ Initial background applied to mesh and rendered');
     },
     function(progress) {
-      console.log('Initial texture loading:', Math.round((progress.loaded / progress.total) * 100) + '%');
+      console.log('initial texture loading:', Math.round((progress.loaded / progress.total) * 100) + '%');
     },
     function(error) {
       console.error('❌ Failed to load initial background:', error);
@@ -152,41 +152,17 @@ function init() {
 
   var clock = new THREE.Clock();
 
-  joystick = new VirtualJoystick({
-    mouseSupport: true,
-    stationaryBase: false,
-    strokeStyle: 'grey',
-    baseX: 100,
-    baseY: 150,
-    limitStickTravel: true,
-    stickRadius: 45
+  // Initialize D-Pad controller
+  joystick = new DPad({
+    container: document.body,
+    position: 'bottom-right',
+    size: 150,
+    offset: 20
   });
+  console.log('✅ D-Pad controller initialized');
 
   var frameTime = 0;
-
-  animate();
-
-  function animate() {
-
-    requestAnimationFrame(animate);
-    frameTime = clock.getDelta();
-
-    onPointerDownLon = lon;
-    onPointerDownLat = lat;
-
-    if (joystick.right()) {
-      lon = onPointerDownLon + 60 * frameTime;
-    }
-    if (joystick.left()) {
-      lon = onPointerDownLon - 60 * frameTime;
-    }
-    if (joystick.up()) {
-      lat = onPointerDownLat + 60 * frameTime;
-    }
-    if (joystick.down()) {
-      lat = onPointerDownLat - 60 * frameTime;
-    }
-  }
+  var dpadRotationSpeed = 100; // Degrees per second
 
   document.addEventListener('mousedown', onDocumentMouseDown, false);
   document.addEventListener('mousemove', onDocumentMouseMove, false);
@@ -254,6 +230,14 @@ function onWindowResize() {
 }
 
 function onDocumentMouseDown(event) {
+  // Check if click is on D-pad - if so, don't start camera interaction
+  var target = event.target;
+  var isDPadClick = target.closest('.dpad-container') || target.closest('.dpad-button');
+  
+  if (isDPadClick) {
+    return; // Don't start camera drag on D-pad
+  }
+  
   event.preventDefault();
   
   isUserInteracting = true;
@@ -269,6 +253,14 @@ function onDocumentMouseDown(event) {
 }
 
 function onDocumentTouchStart(event) {
+  // Check if touch is on D-pad - if so, don't start camera interaction
+  var target = event.target;
+  var isDPadTouch = target.closest('.dpad-container') || target.closest('.dpad-button');
+  
+  if (isDPadTouch) {
+    return; // Don't start camera drag on D-pad
+  }
+  
   event.preventDefault();
 
   mouseDownX = event.touches[0].clientX;
@@ -294,7 +286,7 @@ function onDocumentTouchMove(event) {
 
 function onDocumentTouchEnd(event) {
   if (!isDragging) {
-    // Check if touch was on UI elements (buttons, overlays, etc.)
+    // Check if touch was on UI elements (buttons, overlays, D-pad, etc.)
     var target = event.target;
     var isUIElement = target.tagName === 'BUTTON' || 
                      target.closest('button') || 
@@ -302,7 +294,9 @@ function onDocumentTouchEnd(event) {
                      target.closest('#muteBtn') ||
                      target.closest('#restartBtn') ||
                      target.closest('#backToMenuBtn') ||
-                     target.closest('#backToMenuFromEndBtn');
+                     target.closest('#backToMenuFromEndBtn') ||
+                     target.closest('.dpad-container') ||
+                     target.closest('.dpad-button');
     
     if (!isUIElement) {
       // This was a tap on the game area, not a UI element - handle selection
@@ -332,7 +326,7 @@ function onDocumentMouseMove(event) {
 
 function onDocumentMouseUp(event) {
   if (isUserInteracting && !isDragging) {
-    // Check if click was on UI elements (buttons, overlays, etc.)
+    // Check if click was on UI elements (buttons, overlays, D-pad, etc.)
     var target = event.target;
     var isUIElement = target.tagName === 'BUTTON' || 
                      target.closest('button') || 
@@ -340,7 +334,9 @@ function onDocumentMouseUp(event) {
                      target.closest('#muteBtn') ||
                      target.closest('#restartBtn') ||
                      target.closest('#backToMenuBtn') ||
-                     target.closest('#backToMenuFromEndBtn');
+                     target.closest('#backToMenuFromEndBtn') ||
+                     target.closest('.dpad-container') ||
+                     target.closest('.dpad-button');
     
     if (!isUIElement) {
       // This was a click on the game area, not a UI element - handle selection
@@ -377,10 +373,27 @@ function update() {
     // Debug: Check if items are still loading
     console.log('Waiting for items to load... loadCompliat:', loadCompliat);
   }
+  
+  // D-Pad controls for camera rotation
+  var rotationSpeed = 1.0; // Degrees per frame (reduced for smoother control)
+  if (joystick) {
+    if (joystick.right()) {
+      lon += rotationSpeed;
+    }
+    if (joystick.left()) {
+      lon -= rotationSpeed;
+    }
+    if (joystick.up()) {
+      lat += rotationSpeed;
+    }
+    if (joystick.down()) {
+      lat -= rotationSpeed;
+    }
+  }
+  
   lat = Math.max(-85, Math.min(85, lat));
   phi = THREE.Math.degToRad(90 - lat);
   theta = THREE.Math.degToRad(lon);
-
   camera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
   camera.target.y = 500 * Math.cos(phi);
   camera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
@@ -429,7 +442,7 @@ function setupGame() {
     {
       name: 'The Attic',
       background: 'assets/bg4.jpg',
-      objects: ['Key', 'Hour Glass', 'Haunted Painting'], // Real objects that give points
+      objects: ['Haunted Painting', 'Hour Glass', 'Key'], // Real objects that give points
       fakeObjects: ['Old clock', 'Old frame'], // Fake objects that are visible but don't give points
       doorPosition: null, // No door in final room
       doorRotation: null
@@ -446,7 +459,7 @@ function setupGame() {
     'Bulb1': 'Glass vessel of forgotten light, once bright now dim in endless night.',
     'Bulb2': 'Hollow sphere that held the glow, now dark where light used to flow.',
     'Horse': 'Silent steed of wood, gallops only in memories.',
-    'Spider': 'Threads of silence spun thin, a widow’s veil in the corner.',
+    'Spider': 'I believe with great power comes……..I guess we all know it',
     'Group': 'Faces gather but never speak, captured mid-whisper.',
     'Teapot': 'Porcelain throat pours warmth, now cold as the grave.',
     'Wood': 'Splinters of yesterday’s forest, sleeping by the fire’s ghost.',
@@ -730,8 +743,8 @@ function handleSelection() {
     }
   }
 
-  if (!hitObj || !hitObj.visible) {
-    // Empty space or already found
+  if (!hitObj || !hitObj.visible || (hitObj.userData && hitObj.userData.isAnimating)) {
+    // Empty space, already found, or currently animating
     updateScore(-2);
     return;
   }
@@ -741,7 +754,7 @@ function handleSelection() {
   var isFakeObject = currentRoomData.fakeObjects && currentRoomData.fakeObjects.includes(hitObj.name);
   
   if (hitObj.name === expected) {
-    // Correct object found
+    // Correct object found - start animation (don't hide immediately)
     animateCorrectObject(hitObj);
     updateScore(+5);
     if (ui.clueBar) {
@@ -771,6 +784,9 @@ function handleSelection() {
 function animateCorrectObject(object) {
   if (!object) return;
   
+  // Mark object as animating to prevent multiple clicks
+  object.userData.isAnimating = true;
+  
   // Store original properties
   var originalPosition = object.position.clone();
   var originalScale = object.scale.clone();
@@ -789,8 +805,9 @@ function animateCorrectObject(object) {
   
   var startTime = Date.now();
   
-  // Calculate center position (convert screen center to world position)
-  var centerPosition = new THREE.Vector3(0, 0, -50); // Closer to camera for visibility
+  // Calculate center position relative to camera view
+  var centerPosition = new THREE.Vector3();
+  centerPosition.copy(camera.target).normalize().multiplyScalar(100); // Move towards camera target at distance 100
   
   function animateFrame() {
     var elapsed = Date.now() - startTime;
@@ -836,6 +853,11 @@ function animateCorrectObject(object) {
       object.scale.copy(originalScale);
       if (object.material) {
         object.material.opacity = originalOpacity;
+      }
+      
+      // Clear animation flag
+      if (object.userData) {
+        object.userData.isAnimating = false;
       }
     }
   }
