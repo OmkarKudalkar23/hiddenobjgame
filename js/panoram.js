@@ -443,7 +443,7 @@ function setupGame() {
       name: 'The Attic',
       background: 'assets/bg4.jpg',
       objects: ['Haunted Painting', 'Hour Glass', 'Key'], // Real objects that give points
-      fakeObjects: ['Old clock', 'Old frame'], // Fake objects that are visible but don't give points
+      fakeObjects: ['Old clock'], // Fake objects that are visible but don't give points
       doorPosition: null, // No door in final room
       doorRotation: null
     }
@@ -764,6 +764,7 @@ function handleSelection() {
     } else {
       setTimeout(function(){ nextClue(); }, 2200);
     }
+    return; // CRITICAL: Exit immediately to prevent penalty scoring
   } else if (isFakeObject) {
     // Fake object clicked - give penalty but show message
     updateScore(-2);
@@ -1195,15 +1196,35 @@ function loadRoom(roomIndex) {
   // Stop any existing room timer
   stopRoomTimer();
   
-  // Update background with simplified approach
+  // Update background with immediate transition
   var backgroundMesh = scene.getObjectByName('backGround');
   if (backgroundMesh) {
     console.log('🔄 Loading background texture:', room.background);
     
-    // Create new texture loader with immediate loading
+    // IMMEDIATELY replace with loading background to prevent old room display
+    if (backgroundMesh.material && backgroundMesh.material.map) {
+      backgroundMesh.material.map.dispose();
+    }
+    if (backgroundMesh.material) {
+      backgroundMesh.material.dispose();
+    }
+    
+    // Set temporary dark background immediately
+    backgroundMesh.material = new THREE.MeshBasicMaterial({
+      color: 0x000000, // Black loading background
+      side: THREE.DoubleSide
+    });
+    backgroundMesh.material.needsUpdate = true;
+    
+    // Force immediate render to show loading background
+    if (renderer && scene && camera) {
+      renderer.render(scene, camera);
+    }
+    
+    // Now load the actual texture
     var loader = new THREE.TextureLoader();
     
-    // Load texture synchronously with error handling
+    // Load texture asynchronously
     try {
       loader.load(
         room.background,
@@ -1217,22 +1238,19 @@ function loadRoom(roomIndex) {
           texture.minFilter = THREE.LinearFilter;
           texture.magFilter = THREE.LinearFilter;
           
-          // Dispose old material if exists
-          if (backgroundMesh.material && backgroundMesh.material.map) {
-            backgroundMesh.material.map.dispose();
-          }
+          // Dispose temporary loading material
           if (backgroundMesh.material) {
             backgroundMesh.material.dispose();
           }
           
-          // Create new material
+          // Create new material with loaded texture
           backgroundMesh.material = new THREE.MeshBasicMaterial({
             map: texture,
             side: THREE.DoubleSide
           });
           backgroundMesh.material.needsUpdate = true;
           
-          // Force immediate render
+          // Force immediate render with new texture
           if (renderer && scene && camera) {
             renderer.render(scene, camera);
           }

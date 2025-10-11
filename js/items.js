@@ -291,9 +291,9 @@
   img_hour_glass.map.minFilter = THREE.LinearFilter;
   var hour_glass = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), img_hour_glass);
   hour_glass.name = 'Hour Glass';
-  hour_glass.position.x = -150;
-  hour_glass.position.y = -120;
-  hour_glass.position.z = -190;
+  hour_glass.position.x = 180;
+  hour_glass.position.y = -180;
+  hour_glass.position.z = 220;
   hour_glass.rotation.x = 0.3;
   hour_glass.rotation.y = 0.7;
   scene.add(hour_glass);
